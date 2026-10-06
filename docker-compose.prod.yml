@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql://tara_user:tara_password@db:5432/tara_db
+      - ENVIRONMENT=production
+    volumes:
+
+      - vector_data:/app/vectorstore
+    depends_on:
+      - db
+
+  frontend:
+    build: .
+    command: streamlit run frontend/app.py --server.port 8501 --server.address 0.0.0.0
+    restart: always
+    depends_on:
+      - api
+
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      - POSTGRES_USER=tara_user
+      - POSTGRES_PASSWORD=tara_password
+      - POSTGRES_DB=tara_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - api
+      - frontend
+
+volumes:
+  pgdata:
+  vector_data:

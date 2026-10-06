@@ -1,0 +1,32 @@
+VERSION "EV_Powertrain_CANFD_v3.1"
+
+NS_ :
+    BS_
+    BU_
+
+BU_: BMS_ECU Inverter_ECU Charger_ECU Central_Gateway
+
+BO_ 1024 BMS_BatteryStatus: 64 BMS_ECU
+ SG_ BMS_PackVoltage : 0|16@1+ (0.1,0) [0|1000] "V" Inverter_ECU
+ SG_ BMS_PackCurrent : 16|16@1- (0.1,0) [-500|500] "A" Inverter_ECU
+ SG_ BMS_MaxDischargeCurrent : 32|16@1+ (0.1,0) [0|1000] "A" Inverter_ECU
+ SG_ BMS_FreshnessCounter : 48|8@1+ (1,0) [0|255] "" Inverter_ECU
+ SG_ BMS_CMAC_Signature : 56|8@1+ (1,0) [0|255] "" Inverter_ECU
+
+BO_ 1025 Inverter_TorqueRequest: 64 Inverter_ECU
+ SG_ INV_TargetTorque : 0|16@1- (0.5,0) [-2000|2000] "Nm" Central_Gateway
+ SG_ INV_MotorRPM : 16|16@1+ (1,0) [0|20000] "rpm" Central_Gateway
+ SG_ INV_HighVoltageState : 32|8@1+ (1,0) [0|3] "" Central_Gateway
+
+BO_ 1030 Charger_HVDC_Status: 64 Charger_ECU
+ SG_ CHG_ChargeState : 0|8@1+ (1,0) [0|5] "" BMS_ECU
+ SG_ CHG_DCVoltageLimit : 8|16@1+ (0.1,0) [0|1000] "V" BMS_ECU
+
+# ==============================================================================
+# TRUST BOUNDARY & RISK ANALYSIS METADATA
+# ==============================================================================
+# Trust Boundary TB-EV-01: High Voltage Charger Port ↔ BMS Controller
+# Risk: High — Unauthorized DC Fast Charging Voltage Override
+# STRIDE: Tampering / Denial of Service
+# Security Control: SecOC CMAC validation enforced on Message ID 1024 (BMS_BatteryStatus)
+# Requirement: CSR-BMS-01: All high-voltage control frames shall enforce 128-bit AES-CMAC tags.

@@ -1,0 +1,77 @@
+{
+  "project_name": "Autonomous SUV 2026 — ADAS & Perception Architecture",
+  "version": "2.4.0",
+  "compliance": ["ISO/SAE 21434", "UNECE R155", "ISO 26262 ASIL-D"],
+  "ecus": [
+    {
+      "ecu_id": "ECU-101",
+      "name": "ADAS Central Perception Controller",
+      "domain": "Autonomous Driving",
+      "bus": "1000Base-T1 Automotive Ethernet",
+      "asil_level": "ASIL-D"
+    },
+    {
+      "ecu_id": "ECU-102",
+      "name": "Front Long-Range Radar (77GHz)",
+      "domain": "Sensors",
+      "bus": "CAN FD",
+      "asil_level": "ASIL-B"
+    },
+    {
+      "ecu_id": "ECU-103",
+      "name": "Stereo Vision Camera Controller",
+      "domain": "Sensors",
+      "bus": "100Base-T1",
+      "asil_level": "ASIL-B"
+    },
+    {
+      "ecu_id": "ECU-104",
+      "name": "3D LiDAR Scanner Gateway",
+      "domain": "Sensors",
+      "bus": "1000Base-T1",
+      "asil_level": "ASIL-B"
+    },
+    {
+      "ecu_id": "ECU-105",
+      "name": "Steering & Actuation Controller",
+      "domain": "Chassis",
+      "bus": "CAN FD",
+      "asil_level": "ASIL-D"
+    }
+  ],
+  "trust_boundaries": [
+    {
+      "boundary_id": "TB-101",
+      "source": "External HD Map Cloud Service",
+      "target": "ADAS Perception Controller",
+      "interface": "5G Cellular V2X",
+      "risk_level": "Critical",
+      "stride_category": "Tampering / Elevation of Privilege",
+      "description": "Spoofing of HD lane geometry or map updates over V2X connection."
+    },
+    {
+      "boundary_id": "TB-102",
+      "source": "Sensor Ethernet Subnet",
+      "target": "Actuation & Steering CAN FD Bus",
+      "interface": "Central Gateway Router",
+      "risk_level": "High",
+      "stride_category": "Spoofing",
+      "description": "Lateral pivot from compromised camera gateway into ASIL-D steering commands."
+    },
+    {
+      "boundary_id": "TB-103",
+      "source": "Diagnostic OBD-II Interface",
+      "target": "ADAS Calibration Memory",
+      "interface": "UDS Protocol (ISO 14229)",
+      "risk_level": "Medium",
+      "stride_category": "Information Disclosure",
+      "description": "Unauthenticated sensor parameter override via OBD-II port."
+    }
+  ],
+  "security_controls": {
+    "secoc_can_fd": false,
+    "tls_v2x_version": "1.3",
+    "secure_boot": true,
+    "hardware_hsms": ["eHSM-v2 on ECU-101", "HSM-v1 on ECU-105"]
+  }
+}

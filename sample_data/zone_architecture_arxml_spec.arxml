@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AUTOSAR xmlns="http://autosar.org/schema/r4.0" xmlns:xsi="http://www.w3.org/2000/svg">
+  <AR-PACKAGES>
+    <AR-PACKAGE>
+      <SHORT-NAME>ZoneArchitecture2026</SHORT-NAME>
+      <ELEMENTS>
+        <SYSTEM>
+          <SHORT-NAME>Zonal_EE_System</SHORT-NAME>
+          <CATEGORY>ZONE_CONTROLLER_ARCHITECTURE</CATEGORY>
+          <FIBEX-ELEMENTS>
+            <ECU-INSTANCE>
+              <SHORT-NAME>Zone_Controller_FrontRight</SHORT-NAME>
+              <DOMAIN>Body_Chassis_Zone</DOMAIN>
+              <BUS-REF>AutomotiveEthernet_Gigabit</BUS-REF>
+              <SECURITY-LEVEL>ASIL-B</SECURITY-LEVEL>
+            </ECU-INSTANCE>
+            <ECU-INSTANCE>
+              <SHORT-NAME>Zone_Controller_FrontLeft</SHORT-NAME>
+              <DOMAIN>Powertrain_Zone</DOMAIN>
+              <BUS-REF>CANFD_Powertrain_500k</BUS-REF>
+              <SECURITY-LEVEL>ASIL-D</SECURITY-LEVEL>
+            </ECU-INSTANCE>
+            <ECU-INSTANCE>
+              <SHORT-NAME>Central_Compute_Cluster</SHORT-NAME>
+              <DOMAIN>HPC_Domain</DOMAIN>
+              <BUS-REF>PCIe_SOMEIP_Ethernet</BUS-REF>
+              <SECURITY-LEVEL>ASIL-B</SECURITY-LEVEL>
+            </ECU-INSTANCE>
+          </FIBEX-ELEMENTS>
+        </SYSTEM>
+        <SECURITY-EVENT-COLLECTOR>
+          <SHORT-NAME>SECMON_AUTOSAR_Module</SHORT-NAME>
+          <LOGGING-PROTOCOL>SOME/IP-TP</LOGGING-PROTOCOL>
+          <TRUST-BOUNDARIES>
+            <BOUNDARY id="TB-Z01" risk="Critical" stride="Elevation of Privilege">
+              <SOURCE>In-Cabin Infotainment Zone</SOURCE>
+              <TARGET>Central Compute Cluster (HPC)</TARGET>
+              <INTERFACE>SOME/IP Service Proxy</INTERFACE>
+              <CSR>CSR-ZONE-01: Central compute cluster shall isolate HPC hypervisor domains using hardware IOMMU memory protection.</CSR>
+            </BOUNDARY>
+            <BOUNDARY id="TB-Z02" risk="High" stride="Spoofing">
+              <SOURCE>Zone Controller Front-Right</SOURCE>
+              <TARGET>Zone Controller Front-Left (Powertrain)</TARGET>
+              <INTERFACE>1000Base-T1 Ethernet Ring</INTERFACE>
+              <CSR>CSR-ZONE-02: Enforce MACsec encryption on all inter-zonal ethernet backbones.</CSR>
+            </BOUNDARY>
+          </TRUST-BOUNDARIES>
+        </SECURITY-EVENT-COLLECTOR>
+      </ELEMENTS>
+    </AR-PACKAGE>
+  </AR-PACKAGES>
+</AUTOSAR>

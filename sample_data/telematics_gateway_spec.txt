@@ -1,0 +1,66 @@
+"""
+Preloaded multi-ECU connected vehicle architecture specification.
+Used as sample input for TARA analysis demonstrations.
+"""
+
+# ==============================================================================
+# VEHICLE: Connected Sedan 2025 — Telematics Gateway Architecture
+# ==============================================================================
+
+## 1. System Overview
+
+The Connected Sedan 2025 features a centralized E/E architecture with a
+Telematics Gateway serving as the primary connectivity hub. The vehicle
+integrates Cellular (4G/5G), Wi-Fi, Bluetooth LE, and GNSS interfaces
+through a single Telematics Control Unit (TCU) manufactured by Continental.
+
+## 2. ECU Inventory
+
+| ECU ID   | Name                        | Domain           | Bus            | Safety Level |
+|----------|-----------------------------|------------------|----------------|--------------|
+| ECU-001  | Telematics Control Unit     | Connectivity     | Ethernet       | QM           |
+| ECU-002  | Central Gateway             | Network Mgmt     | Ethernet/CAN   | ASIL-B       |
+| ECU-003  | Body Control Module         | Body             | CAN 2.0B       | QM           |
+| ECU-004  | Powertrain Control Module   | Powertrain       | CAN FD         | ASIL-D       |
+| ECU-005  | Brake Control Module        | Chassis          | CAN FD         | ASIL-D       |
+| ECU-006  | ADAS Domain Controller      | ADAS             | Ethernet       | ASIL-B       |
+| ECU-007  | Infotainment Head Unit      | Infotainment     | Ethernet       | QM           |
+
+## 3. Communication Matrix
+
+| Source    | Destination | Protocol        | Bandwidth   | Auth      |
+|-----------|-------------|-----------------|-------------|-----------|
+| ECU-001   | ECU-002     | 100Base-T1      | 100 Mbps    | TLS 1.3   |
+| ECU-002   | ECU-004     | CAN FD          | 500 kbps    | None      |
+| ECU-002   | ECU-005     | CAN FD          | 500 kbps    | None      |
+| ECU-002   | ECU-003     | CAN 2.0B        | 500 kbps    | None      |
+| ECU-002   | ECU-006     | 1000Base-T1     | 1 Gbps      | MACsec    |
+| ECU-001   | ECU-007     | 100Base-T1      | 100 Mbps    | None      |
+| Cloud     | ECU-001     | Cellular 5G     | Variable    | mTLS      |
+
+## 4. Trust Boundaries
+
+| ID    | Source Domain            | Target Domain              | Interface   | Risk   |
+|-------|--------------------------|----------------------------|-------------|--------|
+| TB-01 | Public Cloud / Internet  | Telematics Gateway Subnet  | Cellular    | High   |
+| TB-02 | OBD-II Diagnostic Port   | Central Gateway / CAN Bus  | OBD-II      | Medium |
+| TB-03 | In-Vehicle Ethernet      | Powertrain CAN FD Subnet   | Gateway     | Low    |
+| TB-04 | Infotainment Subnet      | ADAS Subnet                | Firewall    | Medium |
+
+## 5. External Interfaces
+
+- **Cellular Modem**: Qualcomm SDX65 5G modem, firmware version 3.2.1
+- **Wi-Fi**: 802.11ax (Wi-Fi 6), used for in-cabin hotspot and service downloads
+- **Bluetooth LE 5.3**: Phone-as-key, tire pressure monitoring relay
+- **OBD-II Port**: ISO 15765-4 (CAN), accessible under dashboard
+- **USB-C**: Infotainment media and Apple CarPlay / Android Auto
+- **GNSS**: u-blox NEO-M9N, used for navigation and fleet tracking
+
+## 6. Security Controls (Current)
+
+- TLS 1.3 mutual authentication between Cloud and TCU
+- Secure Boot on TCU (vendor proprietary, not hardware-anchored)
+- No SecOC on CAN FD powertrain segment
+- No authentication on OBD-II diagnostic interface
+- Basic IP firewall between Infotainment and ADAS domains
+- OTA updates delivered via HTTPS but firmware signature verification is software-only
