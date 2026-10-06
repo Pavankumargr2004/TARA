@@ -85,21 +85,23 @@ div[data-testid="stTabs"] {
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(131, 91, 255, 0.25);
     border-radius: 14px;
-    padding: 6px;
+    padding: 8px 12px;
     margin-bottom: 1.5rem;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 div[data-testid="stTabs"] [role="tablist"] {
-    gap: 6px;
+    gap: 18px !important;
+    justify-content: flex-start !important;
     background: transparent !important;
 }
 div[data-testid="stTabs"] button {
     color: #9d9aa9 !important;
     font-family: 'Plus Jakarta Sans', sans-serif !important;
     font-weight: 600 !important;
-    font-size: 13px !important;
+    font-size: 13.5px !important;
     border-radius: 10px !important;
-    padding: 9px 18px !important;
+    padding: 10px 24px !important;
+    margin: 0 2px !important;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
     border: none !important;
     background: transparent !important;
@@ -673,21 +675,6 @@ body {
     </div>
 </div>
 
-<!-- ── Embedded Interactive Dashboard Window ── -->
-<div class="dashboard-frame" id="workspace-anchor">
-    <div class="df-header">
-        <div class="df-title-wrap">
-            <div class="df-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/></svg></div>
-            <div class="df-title">Vehicle Threat Topology <span class="df-time">[Updated Live]</span></div>
-        </div>
-        <div style="display:flex;gap:8px;">
-            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 8px;border-radius:999px;background:rgba(0,245,212,0.12);color:#00f5d4;border:1px solid rgba(0,245,212,0.3);">● ISO 21434 Active</span>
-        </div>
-    </div>
-    
-    {DF_BODY_PLACEHOLDER}
-</div>
-
 </div>
 
 <script>
@@ -696,31 +683,10 @@ window.addEventListener('scroll', () => {
     const orb = document.querySelector('.glow-orb-center');
     const grid = document.querySelector('.grid-bg');
     const hero = document.querySelector('.hero-centered');
-    const frame = document.querySelector('.dashboard-frame');
     if (orb) orb.style.transform = `translate(-50%, ${scrolled * 0.35}px)`;
     if (grid) grid.style.transform = `translateY(${scrolled * 0.15}px)`;
     if (hero) hero.style.transform = `translateY(${scrolled * 0.12}px)`;
-    if (frame) frame.style.transform = `translateY(${scrolled * 0.05}px)`;
 });
-
-function updateLiveTime() {
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString();
-    const timeEl = document.querySelector('.df-time');
-    if (timeEl) timeEl.textContent = `[Live Telemetry: ${timeStr}]`;
-}
-setInterval(updateLiveTime, 1000);
-updateLiveTime();
-
-// Real-time asset & message rate fluctuation
-setInterval(() => {
-    const valEl = document.querySelector('.df-stat-val');
-    if (valEl) {
-        const base = 1240;
-        const delta = Math.floor(Math.random() * 11) - 5;
-        valEl.textContent = (base + delta).toLocaleString();
-    }
-}, 2500);
 </script>
 </body>
 </html>
@@ -761,44 +727,8 @@ if "tara_items" not in st.session_state:
         }
     ]
 
-# Dynamically compute real-time executive dashboard metrics from active session state
-tot_items = len(st.session_state.tara_items)
-appr_items = sum(1 for i in st.session_state.tara_items if i.get('status') == 'Approved')
-crit_items = sum(1 for i in st.session_state.tara_items if i.get('severity') in ['critical', 'high'])
-
-secoc_pct_num = round((appr_items / max(1, tot_items)) * 100, 1) if tot_items > 0 else 98.4
-exp_pct_num = round((crit_items / max(1, tot_items)) * 100, 1) if tot_items > 0 else 23.0
-audit_pct_num = 100.0 if (appr_items == tot_items and tot_items > 0) else round((appr_items / max(1, tot_items)) * 100, 1)
-
-df_body_dynamic = f"""
-    <div class="df-body">
-        <div class="df-stat-main">
-            <div class="df-stat-val">{1236 + (tot_items - 2)}</div>
-            <div class="df-stat-lbl">Total Vehicle Assets</div>
-        </div>
-
-        <div class="df-stat-mini">
-            <div class="df-mini-title">SecOC Protection</div>
-            <div style="font-weight:700;font-size:15px;color:#00f5d4;">{secoc_pct_num}% Protected</div>
-            <div class="df-bar-bg"><div class="df-bar-fill" style="width: {secoc_pct_num}%;"></div></div>
-        </div>
-
-        <div class="df-stat-mini">
-            <div class="df-mini-title">Unmanaged Vectors</div>
-            <div style="font-weight:700;font-size:15px;color:#ff5eab;">{exp_pct_num}% Exposed</div>
-            <div class="df-bar-bg"><div class="df-bar-fill" style="width: {exp_pct_num}%; background: #ff2a85;"></div></div>
-        </div>
-
-        <div class="df-stat-mini">
-            <div class="df-mini-title">Audit Status</div>
-            <div style="font-weight:700;font-size:15px;color:#ffc833;">{"UNECE R155 Ready" if audit_pct_num == 100 else f"{audit_pct_num}% Audit Ready"}</div>
-            <div class="df-bar-bg"><div class="df-bar-fill" style="width: {audit_pct_num}%; background: #ffb703;"></div></div>
-        </div>
-    </div>
-"""
-
-HERO_DYNAMIC_HTML = HERO_HTML.replace('{DF_BODY_PLACEHOLDER}', df_body_dynamic)
-components.html(HERO_DYNAMIC_HTML, height=620, scrolling=False)
+components.html(HERO_HTML, height=270, scrolling=False)
+st.markdown('<div id="workspace-anchor"></div>', unsafe_allow_html=True)
 
 
 # ─── WORKBENCH TABS ────────────────────────────────────────────────────────────
