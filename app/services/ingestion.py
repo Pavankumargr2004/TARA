@@ -10,6 +10,7 @@ from langchain_community.document_loaders import PyMuPDFLoader, TextLoader
 try:
     from langchain_text_splitters import RecursiveCharacterTextSplitter
 except ImportError:
+    # pyrefly: ignore [missing-import]
     from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 
