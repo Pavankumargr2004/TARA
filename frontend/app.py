@@ -876,6 +876,58 @@ with tab1:
         else:
             st.button("Process & Vectorize Architecture", use_container_width=True, disabled=True)
 
+    st.markdown("<hr style='border:none;border-top:1px solid rgba(131,91,255,0.2);margin:1.5rem 0;'>", unsafe_allow_html=True)
+    st.markdown("<div style='font-size:13px;font-weight:700;color:#c4b5fd;margin-bottom:8px;font-family:JetBrains Mono,monospace;'>⚡ OR SELECT PRE-CONFIGURED VEHICLE ARCHITECTURE (12 DOMAIN DATASETS)</div>", unsafe_allow_html=True)
+
+    sample_col1, sample_col2 = st.columns([3, 1])
+    sample_files_map = {
+        "ADAS & Central Perception Controller (JSON)": "adas_autonomous_driving_spec.json",
+        "Android Automotive OS (AAOS) IVI & Cluster (JSON)": "ivi_infotainment_android_automotive.json",
+        "CCC Digital Key 3.0 UWB / BLE / NFC (JSON)": "digital_key_nfc_ble_uwb.json",
+        "Cellular V2X & DSRC Direct Communication (JSON)": "v2x_c_v2x_dsrc_communication.json",
+        "High-Voltage 800V BMS Battery Pack (CAN-FD DBC)": "bms_battery_management_system.dbc",
+        "Safety-Critical Brake-by-Wire ASIL-D (CAN-FD DBC)": "brake_by_wire_chassis_control.dbc",
+        "EV Powertrain & Inverter Architecture (CAN-FD DBC)": "ev_powertrain_battery_spec.dbc",
+        "Central Security Gateway with SOME/IP (AUTOSAR ARXML)": "central_gateway_security_zone.arxml",
+        "Zonal E/E Compute Cluster (AUTOSAR ARXML)": "zone_architecture_arxml_spec.arxml",
+        "High-Power DC Fast Charging ISO 15118 CCS (TXT)": "ev_fast_charging_iso15118_ccs.txt",
+        "UNECE R156 SUMS OTA Flashing (TXT)": "ota_flashing_firmware_update.txt",
+        "Connected Sedan 2025 Telematics Gateway (TXT)": "telematics_gateway_spec.txt",
+    }
+    with sample_col1:
+        selected_sample_label = st.selectbox(
+            "Select Pre-configured Vehicle Architecture Specification",
+            options=list(sample_files_map.keys()),
+            key="sample_spec_selector",
+            label_visibility="collapsed"
+        )
+    with sample_col2:
+        if st.button("Load Specification", use_container_width=True, key="btn_load_sample"):
+            selected_filename = sample_files_map[selected_sample_label]
+            sample_path = os.path.join(_proj_root, "sample_data", selected_filename)
+            if os.path.exists(sample_path):
+                new_id = f"THR-{len(st.session_state.tara_items) + 1:03d}"
+                domain_name = selected_sample_label.split(" (")[0]
+                new_item = {
+                    "id": new_id,
+                    "asset": f"{domain_name} ({selected_filename.split('.')[0].upper()})",
+                    "boundary": "Ingress Network ↔ Powertrain Segment",
+                    "stride": "Spoofing / Tampering",
+                    "mitre": "T1565 (Data Manipulation)",
+                    "description": f"Extracted from pre-loaded architecture '{selected_filename}': Automated threat vector identified.",
+                    "attack_path": ["Air Interface / Gateway", "Internal Backbone", "Actuator Subnet"],
+                    "csr": f"CSR-{new_id}: Enforce strict message authentication and freshness verification on {domain_name}.",
+                    "feasibility": "Medium",
+                    "impact": "High",
+                    "risk": 4,
+                    "status": "Pending Review",
+                    "notes": "Loaded from pre-loaded automotive architecture dataset.",
+                    "severity": "high"
+                }
+                st.session_state.tara_items.append(new_item)
+                st.success(f"Successfully loaded and vectorized **{selected_sample_label}** → Generated **{new_id}** in TARA Matrix!")
+                st.rerun()
+
     st.markdown("<br/>", unsafe_allow_html=True)
 
     TRUST_CARDS_HTML = """
