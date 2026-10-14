@@ -1,0 +1,69 @@
+{
+  "system_name": "Vehicle-to-Everything (V2X) Communication Architecture",
+  "vehicle_class": "Connected Commercial Truck / Fleet 2026",
+  "standard_alignment": ["IEEE 1609.2", "3GPP Rel 16 (PC5 Mode)", "ISO/SAE 21434 Clause 9"],
+  "modules": [
+    {
+      "module_id": "V2X-OBU-01",
+      "name": "On-Board V2X Communication Unit",
+      "chipset": "Qualcomm 9150 C-V2X / Autotalks CRATON2",
+      "frequencies": ["5.895 - 5.925 GHz (ITS band)"],
+      "protocols": ["ETSI GeoNetworking", "SAE J2735 BSM", "IEEE 1609.3 WSM"],
+      "asil_rating": "ASIL-B"
+    },
+    {
+      "module_id": "V2X-GNSS-02",
+      "name": "Multi-Constellation GNSS & RTK Receiver",
+      "satellites": ["GPS L1/L5", "Galileo E1/E5a", "BeiDou B1/B2a"],
+      "bus": "Automotive Ethernet SOME/IP",
+      "asil_rating": "ASIL-B"
+    },
+    {
+      "module_id": "V2X-HSM-03",
+      "name": "Hardware Security Module (eHSM-V2X)",
+      "crypto_capabilities": ["ECDSA NIST P-256", "SM2", "ECIES", "Butterfly Key Derivation"],
+      "certification": "FIPS 140-3 Level 3 / Common Criteria EAL4+"
+    }
+  ],
+  "trust_boundaries": [
+    {
+      "id": "TB-V2X-01",
+      "source": "Unauthenticated Broadcast Radio Spectrum (5.9 GHz)",
+      "target": "V2X On-Board Unit (OBU)",
+      "interface": "PC5 / DSRC Direct Air Interface",
+      "exposure": "High",
+      "stride": "Spoofing / Tampering",
+      "description": "Adversary broadcasts falsified Emergency Electronic Brake Lights (EEBL) or Road Works Warnings causing unintended autonomous braking."
+    },
+    {
+      "id": "TB-V2X-02",
+      "source": "RF GNSS Antenna",
+      "target": "RTK Precision Positioning Engine",
+      "interface": "L-Band Satellite Signals",
+      "exposure": "High",
+      "stride": "Spoofing",
+      "description": "Civilian GNSS repeater/simulator broadcasts fake satellite ephemeris, shifting vehicle reported coordinates into opposing traffic lanes."
+    },
+    {
+      "id": "TB-V2X-03",
+      "source": "V2X OBU Application Layer",
+      "target": "Vehicle Central ADAS Gateway",
+      "interface": "100Base-T1 Ethernet SOME/IP",
+      "exposure": "Medium",
+      "stride": "Elevation of Privilege",
+      "description": "Lateral pivoting from compromised V2X telematics daemon into brake and steering actuation controllers."
+    }
+  ],
+  "cybersecurity_requirements": [
+    {
+      "req_id": "CSR-V2X-001",
+      "statement": "Every incoming SAE J2735 BSM must verify IEEE 1609.2 digital signature against SCMS CRL before passing to ADAS.",
+      "control": "Thales eHSM Hardware Acceleration for 1,000 verifications/second"
+    },
+    {
+      "req_id": "CSR-V2X-002",
+      "statement": "Implement multi-frequency GNSS anomaly detection and dead reckoning cross-validation to thwart RF spoofing.",
+      "control": "Sensor Fusion Plausibility Checker & IMU odometry verification"
+    }
+  ]
+}
