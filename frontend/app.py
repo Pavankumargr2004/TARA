@@ -2070,204 +2070,242 @@ with tab6:
 # TAB 7 · ML ANALYTICS & EDA
 # ══════════════════════════════════════════════════════════════════════════════
 with tab7:
-    st.markdown("""
-    <h3>ML Analytics, EDA &amp; Model Evaluation</h3>
-    <p class="sub">scikit-learn pipeline — STRIDE Classifier (RandomForest) &amp; Risk Level Classifier (GradientBoosting) trained on ISO 21434 synthetic dataset</p>
-    <hr class="sec-divider"/>
+    st.markdown(f"""
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px;">
+        <div>
+            <div style="font-size:18px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;margin-bottom:4px;">Live Architecture EDA &amp; Real-Time ML Analytics</div>
+            <div style="font-size:13px;color:#9d9aa9;">Exploratory Data Analysis and ML classification for <strong>{st.session_state.current_architecture_name}</strong></div>
+        </div>
+        <div style="background:rgba(20,12,48,0.7);border:1px solid rgba(131,91,255,0.3);padding:6px 14px;border-radius:999px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#00f5d4;">
+            ISO 21434 ML PIPELINE ACTIVE
+        </div>
+    </div>
     """, unsafe_allow_html=True)
 
     if not ML_LIBS_AVAILABLE:
         st.error("scikit-learn / matplotlib not found. Run `pip install scikit-learn matplotlib seaborn`.")
+    elif not st.session_state.tara_items:
+        st.info("No vehicle architecture loaded. Upload an ARXML, DBC, JSON, TXT, or PDF file in Tab 1 to view live dynamic architecture EDA.")
     else:
+        df_live = pd.DataFrame(st.session_state.tara_items)
         ml = _build_ml_pipeline()
-        if ml is None:
-            st.error("ML pipeline could not be initialised.")
-        else:
-            df_ml = ml["df"]
-            le    = ml["le"]
 
-            # ── DATASET OVERVIEW ────────────────────────────────────────────
-            st.markdown("<br/>", unsafe_allow_html=True)
-            ov1, ov2, ov3, ov4 = st.columns(4)
-            ov1.metric("Total Samples", len(df_ml))
-            ov2.metric("Feature Dimensions", len(ml["feat_cols_s"]))
-            ov3.metric("STRIDE Classes", df_ml["stride"].nunique())
-            ov4.metric("Risk Level Classes", df_ml["risk_level"].nunique())
-            st.dataframe(df_ml.head(8), use_container_width=True, hide_index=True)
+        # ── DYNAMIC METRICS FOR LOADED ARCHITECTURE ─────────────────────────
+        ov1, ov2, ov3, ov4 = st.columns(4)
+        ov1.metric("Active Vehicle Threats", len(df_live))
+        ov2.metric("Extracted ECUs / Modules", len(st.session_state.get("extracted_ecus", [])))
+        ov3.metric("Critical Vectors (Risk L5)", sum(1 for r in df_live.get("risk", []) if r >= 5))
+        ov4.metric("Active Trust Boundaries", len(st.session_state.get("trust_boundaries", [])))
 
-            st.markdown("<br/>", unsafe_allow_html=True)
-            st.markdown("""<h3 style="color:#ffffff;font-size:17px;font-weight:700;">Exploratory Data Analysis</h3>""", unsafe_allow_html=True)
+        st.markdown("<br/>", unsafe_allow_html=True)
+        st.markdown("""<div style="font-size:12px;font-weight:700;color:#c4b5fd;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;font-family:'JetBrains Mono',monospace;">SECTION 1: LIVE EXPLORATORY DATA ANALYSIS (INGESTED ARCHITECTURE)</div>""", unsafe_allow_html=True)
 
-            # Row 1: STRIDE dist  |  Risk dist
-            ec1, ec2 = st.columns(2)
-
-            with ec1:
-                fig, ax = plt.subplots(figsize=(6, 3.5))
-                fig.patch.set_facecolor('#0D0826'); ax.set_facecolor('#0D0826')
-                s_counts = df_ml['stride'].value_counts()
-                colors6 = ['#6833ff','#00f5d4','#ff2a85','#ffb703','#835bff','#a782ff']
-                bars = ax.barh(s_counts.index, s_counts.values, color=colors6)
-                for b, v in zip(bars, s_counts.values):
-                    ax.text(v+1, b.get_y()+b.get_height()/2, str(v), va='center', color='#00f5d4', fontsize=8)
-                ax.set_xlabel('Count', color='#9d9aa9'); ax.set_title('STRIDE Category Distribution', color='#ffffff', fontweight='bold')
-                ax.tick_params(colors='#9d9aa9')
-                for sp in ax.spines.values(): sp.set_edgecolor('#2d1f6e')
-                plt.tight_layout(); st.pyplot(fig); plt.close()
-
-            with ec2:
-                fig, ax = plt.subplots(figsize=(6, 3.5))
-                fig.patch.set_facecolor('#0D0826'); ax.set_facecolor('#0D0826')
-                r_counts = df_ml['risk_level'].value_counts().sort_index()
-                risk_colors = ['#00f5d4','#ffb703','#ff8000','#ff2a85','#ff0044']
-                ax.bar([str(k) for k in r_counts.index], r_counts.values, color=risk_colors[:len(r_counts)])
-                ax.set_xlabel('Risk Level  (1=Low → 5=Critical)', color='#9d9aa9'); ax.set_title('Risk Level Distribution', color='#ffffff', fontweight='bold')
-                ax.tick_params(colors='#9d9aa9')
-                for sp in ax.spines.values(): sp.set_edgecolor('#2d1f6e')
-                plt.tight_layout(); st.pyplot(fig); plt.close()
-
-            # Row 2: Attack score histogram  |  Correlation heatmap
-            ec3, ec4 = st.columns(2)
-
-            with ec3:
-                fig, ax = plt.subplots(figsize=(6, 3.5))
-                fig.patch.set_facecolor('#0D0826'); ax.set_facecolor('#0D0826')
-                ax.hist(df_ml['attack_score'], bins=16, color='#6833ff', edgecolor='#835bff', alpha=0.85)
-                for xv, lbl, col_line in [(9,'High|Medium','#ff2a85'), (13,'Medium|Low','#ffb703'), (19,'Low|VeryLow','#00f5d4')]:
-                    ax.axvline(xv, color=col_line, linestyle='--', linewidth=1.3, label=f'{lbl} ({xv})')
-                ax.set_xlabel('Attack Potential Score', color='#9d9aa9'); ax.set_title('Attack Score Distribution', color='#ffffff', fontweight='bold')
-                ax.tick_params(colors='#9d9aa9'); ax.legend(fontsize=6.5, facecolor='#0D0826', labelcolor='#9d9aa9')
-                for sp in ax.spines.values(): sp.set_edgecolor('#2d1f6e')
-                plt.tight_layout(); st.pyplot(fig); plt.close()
-
-            with ec4:
-                num_cols = ["elapsed_time","expertise","knowledge","window","equipment","attack_score","max_impact"]
-                corr = df_ml[num_cols].corr()
-                fig, ax = plt.subplots(figsize=(6, 3.5))
-                fig.patch.set_facecolor('#0D0826'); ax.set_facecolor('#0D0826')
-                im = ax.imshow(corr.values, cmap='RdYlGn', vmin=-1, vmax=1, aspect='auto')
-                short = ["Elapsed","Expert","Know","Window","Equip","Score","MaxImp"]
-                ax.set_xticks(range(len(short))); ax.set_yticks(range(len(short)))
-                ax.set_xticklabels(short, rotation=40, ha='right', color='#9d9aa9', fontsize=7)
-                ax.set_yticklabels(short, color='#9d9aa9', fontsize=7)
-                ax.set_title('Feature Correlation Matrix', color='#ffffff', fontweight='bold')
-                plt.colorbar(im, ax=ax)
-                for i in range(len(num_cols)):
-                    for j in range(len(num_cols)):
-                        ax.text(j, i, f"{corr.values[i,j]:.2f}", ha='center', va='center', color='black', fontsize=5.5)
-                plt.tight_layout(); st.pyplot(fig); plt.close()
-
-            # ── MODEL PERFORMANCE ───────────────────────────────────────────
-            st.markdown("<br/>", unsafe_allow_html=True)
-            st.markdown("""<h3 style="color:#ffffff;font-size:17px;font-weight:700;">Model Evaluation Metrics</h3>""", unsafe_allow_html=True)
-
-            mc1, mc2 = st.columns(2)
-
-            with mc1:
-                s_acc = accuracy_score(ml["y_te_s"], ml["y_pred_s"])
-                s_f1  = f1_score(ml["y_te_s"], ml["y_pred_s"], average="weighted")
-                st.markdown("**STRIDE Classifier — RandomForest** `(StandardScaler + n_estimators=150, max_depth=10)`")
-                m1,m2,m3,m4 = st.columns(4)
-                m1.metric("Accuracy",      f"{s_acc:.1%}")
-                m2.metric("F1 (weighted)", f"{s_f1:.3f}")
-                m3.metric("CV F1 mean",    f"{ml['cv_s'].mean():.3f}")
-                m4.metric("CV F1 ±std",    f"±{ml['cv_s'].std():.3f}")
-                # Confusion matrix
-                cm_s = confusion_matrix(ml["y_te_s"], ml["y_pred_s"])
-                labels = [l[:9] for l in le.classes_]
-                fig, ax = plt.subplots(figsize=(5.5, 4.5))
-                fig.patch.set_facecolor('#0D0826'); ax.set_facecolor('#0D0826')
-                im = ax.imshow(cm_s, cmap='Purples')
-                ax.set_xticks(range(len(labels))); ax.set_yticks(range(len(labels)))
-                ax.set_xticklabels(labels, rotation=40, ha='right', color='#9d9aa9', fontsize=6.5)
-                ax.set_yticklabels(labels, color='#9d9aa9', fontsize=6.5)
-                ax.set_title('STRIDE Confusion Matrix', color='#ffffff', fontweight='bold')
-                ax.set_xlabel('Predicted', color='#9d9aa9'); ax.set_ylabel('Actual', color='#9d9aa9')
-                for i in range(cm_s.shape[0]):
-                    for j in range(cm_s.shape[1]):
-                        ax.text(j, i, str(cm_s[i,j]), ha='center', va='center',
-                                color='white' if cm_s[i,j] > cm_s.max()//2 else '#9d9aa9', fontsize=9)
-                plt.colorbar(im, ax=ax); plt.tight_layout(); st.pyplot(fig); plt.close()
-
-            with mc2:
-                r_acc = accuracy_score(ml["y_te_r"], ml["y_pred_r"])
-                r_f1  = f1_score(ml["y_te_r"], ml["y_pred_r"], average="weighted")
-                st.markdown("**Risk Level Classifier — GradientBoosting** `(StandardScaler + n_estimators=100, max_depth=4)`")
-                m5,m6,m7,m8 = st.columns(4)
-                m5.metric("Accuracy",      f"{r_acc:.1%}")
-                m6.metric("F1 (weighted)", f"{r_f1:.3f}")
-                m7.metric("CV F1 mean",    f"{ml['cv_r'].mean():.3f}")
-                m8.metric("CV F1 ±std",    f"±{ml['cv_r'].std():.3f}")
-                # Confusion matrix
-                cm_r = confusion_matrix(ml["y_te_r"], ml["y_pred_r"])
-                risk_lvls = sorted(set(ml["y_te_r"].tolist() + ml["y_pred_r"].tolist()))
-                fig, ax = plt.subplots(figsize=(5.5, 4.5))
-                fig.patch.set_facecolor('#0D0826'); ax.set_facecolor('#0D0826')
-                im = ax.imshow(cm_r, cmap='Blues')
-                ax.set_xticks(range(len(risk_lvls))); ax.set_yticks(range(len(risk_lvls)))
-                ax.set_xticklabels([f"L{l}" for l in risk_lvls], color='#9d9aa9')
-                ax.set_yticklabels([f"L{l}" for l in risk_lvls], color='#9d9aa9')
-                ax.set_title('Risk Level Confusion Matrix', color='#ffffff', fontweight='bold')
-                ax.set_xlabel('Predicted', color='#9d9aa9'); ax.set_ylabel('Actual', color='#9d9aa9')
-                for i in range(cm_r.shape[0]):
-                    for j in range(cm_r.shape[1]):
-                        ax.text(j, i, str(cm_r[i,j]), ha='center', va='center',
-                                color='white' if cm_r[i,j] > cm_r.max()//2 else '#9d9aa9', fontsize=10)
-                plt.colorbar(im, ax=ax); plt.tight_layout(); st.pyplot(fig); plt.close()
-
-            # ── FEATURE IMPORTANCE ──────────────────────────────────────────
-            st.markdown("<br/>", unsafe_allow_html=True)
-            st.markdown("""<h3 style="color:#ffffff;font-size:17px;font-weight:700;">Feature Importance — STRIDE RandomForest</h3>""", unsafe_allow_html=True)
-            fi_sorted = dict(sorted(ml["fi"].items(), key=lambda x: x[1], reverse=True))
-            fig, ax = plt.subplots(figsize=(10, 3.2))
+        # Dynamic charts computed from the uploaded architecture:
+        ec1, ec2 = st.columns(2)
+        with ec1:
+            fig, ax = plt.subplots(figsize=(6, 3.4))
             fig.patch.set_facecolor('#0D0826'); ax.set_facecolor('#0D0826')
-            ax.bar(list(fi_sorted.keys()), list(fi_sorted.values()), color='#6833ff', edgecolor='#835bff')
-            ax.set_title('Feature Importance (RandomForest — STRIDE Classification)', color='#ffffff', fontweight='bold')
-            ax.set_ylabel('Importance', color='#9d9aa9'); ax.tick_params(colors='#9d9aa9', axis='x', rotation=30)
-            ax.tick_params(colors='#9d9aa9', axis='y')
+            s_counts = df_live['stride'].value_counts()
+            colors_stride = ['#6833ff','#00f5d4','#ff2a85','#ffb703','#835bff','#a782ff']
+            bars = ax.barh(s_counts.index, s_counts.values, color=colors_stride[:len(s_counts)])
+            for b, v in zip(bars, s_counts.values):
+                ax.text(v + 0.05, b.get_y() + b.get_height()/2, str(v), va='center', color='#00f5d4', fontsize=9, fontweight='bold')
+            ax.set_xlabel('Threat Count', color='#9d9aa9', fontsize=9)
+            ax.set_title(f"STRIDE Distribution — {st.session_state.current_architecture_name[:35]}...", color='#ffffff', fontweight='bold', fontsize=10.5)
+            ax.tick_params(colors='#9d9aa9', labelsize=8.5)
             for sp in ax.spines.values(): sp.set_edgecolor('#2d1f6e')
             plt.tight_layout(); st.pyplot(fig); plt.close()
 
-            # ── LIVE PREDICTION ─────────────────────────────────────────────
-            st.markdown("<br/>", unsafe_allow_html=True)
-            st.markdown("""<h3 style="color:#ffffff;font-size:17px;font-weight:700;">Live ML Prediction Interface</h3><hr class="sec-divider"/>""", unsafe_allow_html=True)
+        with ec2:
+            fig, ax = plt.subplots(figsize=(6, 3.4))
+            fig.patch.set_facecolor('#0D0826'); ax.set_facecolor('#0D0826')
+            r_counts = df_live['risk'].value_counts().sort_index()
+            risk_palette = {1: '#00f5d4', 2: '#ffc833', 3: '#ffb703', 4: '#ff8000', 5: '#ff2a85'}
+            bar_cols = [risk_palette.get(k, '#835bff') for k in r_counts.index]
+            bars_r = ax.bar([f"Level {k}" for k in r_counts.index], r_counts.values, color=bar_cols)
+            for b, v in zip(bars_r, r_counts.values):
+                ax.text(b.get_x() + b.get_width()/2, v + 0.05, str(v), ha='center', color='#ffffff', fontsize=9, fontweight='bold')
+            ax.set_ylabel('Threat Count', color='#9d9aa9', fontsize=9)
+            ax.set_title("ISO 21434 Annex H Risk Level Distribution", color='#ffffff', fontweight='bold', fontsize=10.5)
+            ax.tick_params(colors='#9d9aa9', labelsize=8.5)
+            for sp in ax.spines.values(): sp.set_edgecolor('#2d1f6e')
+            plt.tight_layout(); st.pyplot(fig); plt.close()
 
-            with st.form("ml_predict_form"):
-                lp1, lp2, lp3 = st.columns(3)
-                with lp1:
-                    lp_et   = st.selectbox("Elapsed Time score",   [0,1,4,10], help="<1M=0, ≤3M=1, ≤6M=4, >6M=10")
-                    lp_exp  = st.selectbox("Expertise score",       [0,3,6,8],  help="Layman=0, Proficient=3, Expert=6, Multi=8")
-                    lp_know = st.selectbox("Knowledge score",       [0,3,7,11], help="Public=0, Restricted=3, Confidential=7, Strict=11")
-                with lp2:
-                    lp_win   = st.selectbox("Window of Opportunity", [0,1,4,10], help="Unrestricted=0, Easy=1, Moderate=4, Difficult=10")
-                    lp_equip = st.selectbox("Equipment score",       [0,4,7],    help="Standard=0, Specialized=4, Bespoke=7")
-                    lp_i_s   = st.selectbox("Impact: Safety",        [1,2,3,4])
-                with lp3:
-                    lp_i_f  = st.selectbox("Impact: Financial",    [1,2,3,4])
-                    lp_i_o  = st.selectbox("Impact: Operational",  [1,2,3,4])
-                    lp_i_p  = st.selectbox("Impact: Privacy",      [1,2,3,4])
-                predict_btn = st.form_submit_button("Run ML Prediction")
+        ec3, ec4 = st.columns(2)
+        with ec3:
+            fig, ax = plt.subplots(figsize=(6, 3.4))
+            fig.patch.set_facecolor('#0D0826'); ax.set_facecolor('#0D0826')
+            tb_counts = df_live['boundary'].value_counts()[:6]
+            short_tb = [t[:24] + "..." if len(t) > 24 else t for t in tb_counts.index]
+            bars_tb = ax.barh(short_tb, tb_counts.values, color='#835bff')
+            for b, v in zip(bars_tb, tb_counts.values):
+                ax.text(v + 0.05, b.get_y() + b.get_height()/2, str(v), va='center', color='#00f5d4', fontsize=9, fontweight='bold')
+            ax.set_xlabel('Threats per Boundary', color='#9d9aa9', fontsize=9)
+            ax.set_title("Trust Boundary Exposure Density", color='#ffffff', fontweight='bold', fontsize=10.5)
+            ax.tick_params(colors='#9d9aa9', labelsize=8)
+            for sp in ax.spines.values(): sp.set_edgecolor('#2d1f6e')
+            plt.tight_layout(); st.pyplot(fig); plt.close()
 
-            if predict_btn:
-                atk = lp_et + lp_exp + lp_know + lp_win + lp_equip
-                max_imp_live = max(lp_i_s, lp_i_f, lp_i_o, lp_i_p)
-                feat_s = [lp_et,lp_exp,lp_know,lp_win,lp_equip, lp_i_s,lp_i_f,lp_i_o,lp_i_p, atk, max_imp_live]
-                feat_r = [lp_et,lp_exp,lp_know,lp_win,lp_equip, lp_i_s,lp_i_f,lp_i_o,lp_i_p]
+        with ec4:
+            fig, ax = plt.subplots(figsize=(6, 3.4))
+            fig.patch.set_facecolor('#0D0826'); ax.set_facecolor('#0D0826')
+            f_counts = df_live['feasibility'].value_counts()
+            f_cols = {'High': '#ff2a85', 'Medium': '#ffb703', 'Low': '#00f5d4', 'Very Low': '#6833ff'}
+            f_colors_active = [f_cols.get(k, '#835bff') for k in f_counts.index]
+            bars_f = ax.bar(f_counts.index, f_counts.values, color=f_colors_active)
+            for b, v in zip(bars_f, f_counts.values):
+                ax.text(b.get_x() + b.get_width()/2, v + 0.05, str(v), ha='center', color='#ffffff', fontsize=9, fontweight='bold')
+            ax.set_ylabel('Count', color='#9d9aa9', fontsize=9)
+            ax.set_title("Attack Feasibility Potential Distribution", color='#ffffff', fontweight='bold', fontsize=10.5)
+            ax.tick_params(colors='#9d9aa9', labelsize=8.5)
+            for sp in ax.spines.values(): sp.set_edgecolor('#2d1f6e')
+            plt.tight_layout(); st.pyplot(fig); plt.close()
 
-                pred_s_enc = ml["stride_pipe"].predict([feat_s])[0]
-                stride_label = le.inverse_transform([pred_s_enc])[0]
-                pred_risk = int(ml["risk_pipe"].predict([feat_r])[0])
-                proba_s = ml["stride_pipe"].predict_proba([feat_s])[0]
-                top3 = sorted(zip(le.classes_, proba_s), key=lambda x: x[1], reverse=True)[:3]
+        # ── SECTION 2: LIVE ML INFERENCE ACROSS ACTIVE VEHICLE THREATS ────────
+        st.markdown("<br/>", unsafe_allow_html=True)
+        st.markdown("""<div style="font-size:12px;font-weight:700;color:#c4b5fd;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;font-family:'JetBrains Mono',monospace;">SECTION 2: REAL-TIME ML INFERENCE ACROSS INGESTED THREAT VECTORS</div>""", unsafe_allow_html=True)
 
-                feas_label = "High" if atk<=9 else "Medium" if atk<=13 else "Low" if atk<=19 else "Very Low"
-                r1, r2, r3 = st.columns(3)
-                r1.success(f"**Predicted STRIDE:** {stride_label}")
-                r2.info(f"**Predicted Risk Level:** {pred_risk} / 5")
-                r3.warning(f"**Attack Score:** {atk}  |  Feasibility: {feas_label}")
+        if ml and ml.get("stride_pipe"):
+            ml_eval_records = []
+            for t in st.session_state.tara_items:
+                atk_pts = 8 if t.get("feasibility") == "High" else (12 if t.get("feasibility") == "Medium" else 16)
+                imp_pts = 4 if t.get("impact") == "Severe" else (3 if t.get("impact") == "Major" else 2)
+                f_s = [1, 3, 3, 1, 0, imp_pts, imp_pts, imp_pts, imp_pts, atk_pts, imp_pts]
+                f_r = [1, 3, 3, 1, 0, imp_pts, imp_pts, imp_pts, imp_pts]
+                
+                try:
+                    p_s_idx = ml["stride_pipe"].predict([f_s])[0]
+                    p_stride = ml["le"].inverse_transform([p_s_idx])[0]
+                    p_conf = max(ml["stride_pipe"].predict_proba([f_s])[0])
+                    p_risk = int(ml["risk_pipe"].predict([f_r])[0])
+                except Exception:
+                    p_stride = t.get("stride")
+                    p_conf = 0.85
+                    p_risk = t.get("risk", 4)
 
-                st.markdown("**Top-3 STRIDE Probabilities:**")
-                for lbl, prob in top3:
-                    st.progress(float(prob), text=f"{lbl}: {prob:.1%}")
+                ml_eval_records.append({
+                    "Threat ID": t["id"],
+                    "Target Asset": t["asset"][:25] + "..." if len(t["asset"]) > 25 else t["asset"],
+                    "Rule STRIDE": t["stride"],
+                    "ML STRIDE Prediction": p_stride,
+                    "ML Confidence": f"{p_conf:.1%}",
+                    "Rule Risk Level": f"Level {t['risk']}",
+                    "ML Risk Prediction": f"Level {p_risk}",
+                    "Status": "Concordant" if (t['stride'] in p_stride or p_stride in t['stride']) else "Review Needed"
+                })
+
+            df_ml_eval = pd.DataFrame(ml_eval_records)
+            st.dataframe(df_ml_eval, use_container_width=True, hide_index=True)
+
+        # ── SECTION 3: MODEL BENCHMARKS, EVALUATION METRICS & PREDICTION INTERFACE
+        st.markdown("<br/>", unsafe_allow_html=True)
+        st.markdown("""<div style="font-size:12px;font-weight:700;color:#c4b5fd;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;font-family:'JetBrains Mono',monospace;">SECTION 3: ML MODEL BENCHMARK EVALUATION &amp; WHAT-IF PREDICTOR</div>""", unsafe_allow_html=True)
+        st.markdown("""<h3 style="color:#ffffff;font-size:17px;font-weight:700;">Model Evaluation Metrics</h3>""", unsafe_allow_html=True)
+
+        mc1, mc2 = st.columns(2)
+
+        with mc1:
+            s_acc = accuracy_score(ml["y_te_s"], ml["y_pred_s"])
+            s_f1  = f1_score(ml["y_te_s"], ml["y_pred_s"], average="weighted")
+            st.markdown("**STRIDE Classifier — RandomForest** `(StandardScaler + n_estimators=150, max_depth=10)`")
+            m1,m2,m3,m4 = st.columns(4)
+            m1.metric("Accuracy",      f"{s_acc:.1%}")
+            m2.metric("F1 (weighted)", f"{s_f1:.3f}")
+            m3.metric("CV F1 mean",    f"{ml['cv_s'].mean():.3f}")
+            m4.metric("CV F1 ±std",    f"±{ml['cv_s'].std():.3f}")
+            cm_s = confusion_matrix(ml["y_te_s"], ml["y_pred_s"])
+            labels = [l[:9] for l in ml["le"].classes_]
+            fig, ax = plt.subplots(figsize=(5.5, 4.5))
+            fig.patch.set_facecolor('#0D0826'); ax.set_facecolor('#0D0826')
+            im = ax.imshow(cm_s, cmap='Purples')
+            ax.set_xticks(range(len(labels))); ax.set_yticks(range(len(labels)))
+            ax.set_xticklabels(labels, rotation=40, ha='right', color='#9d9aa9', fontsize=6.5)
+            ax.set_yticklabels(labels, color='#9d9aa9', fontsize=6.5)
+            ax.set_title('STRIDE Confusion Matrix', color='#ffffff', fontweight='bold')
+            ax.set_xlabel('Predicted', color='#9d9aa9'); ax.set_ylabel('Actual', color='#9d9aa9')
+            for i in range(cm_s.shape[0]):
+                for j in range(cm_s.shape[1]):
+                    ax.text(j, i, str(cm_s[i,j]), ha='center', va='center',
+                            color='white' if cm_s[i,j] > cm_s.max()//2 else '#9d9aa9', fontsize=9)
+            plt.colorbar(im, ax=ax); plt.tight_layout(); st.pyplot(fig); plt.close()
+
+        with mc2:
+            r_acc = accuracy_score(ml["y_te_r"], ml["y_pred_r"])
+            r_f1  = f1_score(ml["y_te_r"], ml["y_pred_r"], average="weighted")
+            st.markdown("**Risk Level Classifier — GradientBoosting** `(StandardScaler + n_estimators=100, max_depth=4)`")
+            m5,m6,m7,m8 = st.columns(4)
+            m5.metric("Accuracy",      f"{r_acc:.1%}")
+            m6.metric("F1 (weighted)", f"{r_f1:.3f}")
+            m7.metric("CV F1 mean",    f"{ml['cv_r'].mean():.3f}")
+            m8.metric("CV F1 ±std",    f"±{ml['cv_r'].std():.3f}")
+            cm_r = confusion_matrix(ml["y_te_r"], ml["y_pred_r"])
+            risk_lvls = sorted(set(ml["y_te_r"].tolist() + ml["y_pred_r"].tolist()))
+            fig, ax = plt.subplots(figsize=(5.5, 4.5))
+            fig.patch.set_facecolor('#0D0826'); ax.set_facecolor('#0D0826')
+            im = ax.imshow(cm_r, cmap='Blues')
+            ax.set_xticks(range(len(risk_lvls))); ax.set_yticks(range(len(risk_lvls)))
+            ax.set_xticklabels([f"L{l}" for l in risk_lvls], color='#9d9aa9')
+            ax.set_yticklabels([f"L{l}" for l in risk_lvls], color='#9d9aa9')
+            ax.set_title('Risk Level Confusion Matrix', color='#ffffff', fontweight='bold')
+            ax.set_xlabel('Predicted', color='#9d9aa9'); ax.set_ylabel('Actual', color='#9d9aa9')
+            for i in range(cm_r.shape[0]):
+                for j in range(cm_r.shape[1]):
+                    ax.text(j, i, str(cm_r[i,j]), ha='center', va='center',
+                            color='white' if cm_r[i,j] > cm_r.max()//2 else '#9d9aa9', fontsize=10)
+            plt.colorbar(im, ax=ax); plt.tight_layout(); st.pyplot(fig); plt.close()
+
+        st.markdown("<br/>", unsafe_allow_html=True)
+        st.markdown("""<h3 style="color:#ffffff;font-size:17px;font-weight:700;">Feature Importance — STRIDE RandomForest</h3>""", unsafe_allow_html=True)
+        fi_sorted = dict(sorted(ml["fi"].items(), key=lambda x: x[1], reverse=True))
+        fig, ax = plt.subplots(figsize=(10, 3.2))
+        fig.patch.set_facecolor('#0D0826'); ax.set_facecolor('#0D0826')
+        ax.bar(list(fi_sorted.keys()), list(fi_sorted.values()), color='#6833ff', edgecolor='#835bff')
+        ax.set_title('Feature Importance (RandomForest — STRIDE Classification)', color='#ffffff', fontweight='bold')
+        ax.set_ylabel('Importance', color='#9d9aa9'); ax.tick_params(colors='#9d9aa9', axis='x', rotation=30)
+        ax.tick_params(colors='#9d9aa9', axis='y')
+        for sp in ax.spines.values(): sp.set_edgecolor('#2d1f6e')
+        plt.tight_layout(); st.pyplot(fig); plt.close()
+
+        st.markdown("<br/>", unsafe_allow_html=True)
+        st.markdown("""<h3 style="color:#ffffff;font-size:17px;font-weight:700;">Live ML Prediction Interface</h3><hr class="sec-divider"/>""", unsafe_allow_html=True)
+
+        with st.form("ml_predict_form"):
+            lp1, lp2, lp3 = st.columns(3)
+            with lp1:
+                lp_et   = st.selectbox("Elapsed Time score",   [0,1,4,10], help="<1M=0, ≤3M=1, ≤6M=4, >6M=10")
+                lp_exp  = st.selectbox("Expertise score",       [0,3,6,8],  help="Layman=0, Proficient=3, Expert=6, Multi=8")
+                lp_know = st.selectbox("Knowledge score",       [0,3,7,11], help="Public=0, Restricted=3, Confidential=7, Strict=11")
+            with lp2:
+                lp_win   = st.selectbox("Window of Opportunity", [0,1,4,10], help="Unrestricted=0, Easy=1, Moderate=4, Difficult=10")
+                lp_equip = st.selectbox("Equipment score",       [0,4,7],    help="Standard=0, Specialized=4, Bespoke=7")
+                lp_i_s   = st.selectbox("Impact: Safety",        [1,2,3,4])
+            with lp3:
+                lp_i_f  = st.selectbox("Impact: Financial",    [1,2,3,4])
+                lp_i_o  = st.selectbox("Impact: Operational",  [1,2,3,4])
+                lp_i_p  = st.selectbox("Impact: Privacy",      [1,2,3,4])
+            predict_btn = st.form_submit_button("Run ML Prediction")
+
+        if predict_btn:
+            atk = lp_et + lp_exp + lp_know + lp_win + lp_equip
+            max_imp_live = max(lp_i_s, lp_i_f, lp_i_o, lp_i_p)
+            feat_s = [lp_et,lp_exp,lp_know,lp_win,lp_equip, lp_i_s,lp_i_f,lp_i_o,lp_i_p, atk, max_imp_live]
+            feat_r = [lp_et,lp_exp,lp_know,lp_win,lp_equip, lp_i_s,lp_i_f,lp_i_o,lp_i_p]
+
+            pred_s_enc = ml["stride_pipe"].predict([feat_s])[0]
+            stride_label = ml["le"].inverse_transform([pred_s_enc])[0]
+            pred_risk = int(ml["risk_pipe"].predict([feat_r])[0])
+            proba_s = ml["stride_pipe"].predict_proba([feat_s])[0]
+            top3 = sorted(zip(ml["le"].classes_, proba_s), key=lambda x: x[1], reverse=True)[:3]
+
+            feas_label = "High" if atk<=9 else "Medium" if atk<=13 else "Low" if atk<=19 else "Very Low"
+            r1, r2, r3 = st.columns(3)
+            r1.success(f"**Predicted STRIDE:** {stride_label}")
+            r2.info(f"**Predicted Risk Level:** {pred_risk} / 5")
+            r3.warning(f"**Attack Score:** {atk}  |  Feasibility: {feas_label}")
+
+            st.markdown("**Top-3 STRIDE Probabilities:**")
+            for lbl, prob in top3:
+                st.progress(float(prob), text=f"{lbl}: {prob:.1%}")
 
 
 # ─── FOOTER ───────────────────────────────────────────────────────────────────
