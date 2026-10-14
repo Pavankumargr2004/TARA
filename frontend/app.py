@@ -1364,7 +1364,7 @@ with tab1:
     c_btn1, c_btn2, _ = st.columns([1.2, 1.2, 2.5])
     with c_btn1:
         if up_file:
-            if st.button("Process & Vectorize Architecture", use_container_width=True, key="btn_process_file"):
+            if st.button("Process & Vectorize Architecture", width="stretch", key="btn_process_file"):
                 progress_text = st.empty()
                 bar = st.progress(0)
                 
@@ -1404,10 +1404,10 @@ with tab1:
                 st.success(f"Ingested **{up_file.name}** → Extracted {len(tb_list)} Trust Boundaries, {len(ecus)} ECUs & {len(threats)} Threat Vectors into TARA Matrix!")
                 st.rerun()
         else:
-            st.button("Process & Vectorize Architecture", use_container_width=True, disabled=True, key="btn_process_disabled")
+            st.button("Process & Vectorize Architecture", width="stretch", disabled=True, key="btn_process_disabled")
 
     with c_btn2:
-        if st.button("Reset Workspace (Clear Architecture)", use_container_width=True, key="btn_reset_ws"):
+        if st.button("Reset Workspace (Clear Architecture)", width="stretch", key="btn_reset_ws"):
             st.session_state.trust_boundaries = []
             st.session_state.tara_items = []
             st.session_state.extracted_ecus = []
@@ -1440,7 +1440,7 @@ with tab1:
             label_visibility="collapsed"
         )
     with sample_col2:
-        if st.button("Load Specification", use_container_width=True, key="btn_load_sample"):
+        if st.button("Load Specification", width="stretch", key="btn_load_sample"):
             selected_filename = sample_files_map[selected_sample_label]
             sample_path = os.path.join(_proj_root, "sample_data", selected_filename)
             if os.path.exists(sample_path):
@@ -1539,7 +1539,7 @@ with tab1:
         if st.session_state.get("extracted_ecus"):
             with st.expander(f"Extracted Hardware ECUs & Subsystem Matrix ({len(st.session_state.extracted_ecus)} Components)", expanded=False):
                 df_ecus = pd.DataFrame(st.session_state.extracted_ecus)
-                st.dataframe(df_ecus, use_container_width=True, hide_index=True)
+                st.dataframe(df_ecus, width="stretch", hide_index=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1790,7 +1790,7 @@ with tab4:
         with m4:
             st.metric("ML Predicted STRIDE", ml_stride_pred)
 
-        if st.button("Apply Simulated Score to Active Register", use_container_width=True, key="btn_commit_sim"):
+        if st.button("Apply Simulated Score to Active Register", width="stretch", key="btn_commit_sim"):
             sim_threat["feasibility"] = sim_feas
             sim_threat["risk"] = sim_risk
             sim_threat["stride"] = ml_stride_pred
@@ -1961,7 +1961,7 @@ with tab5:
                     "Rationale": a.rationale,
                     "Timestamp": a.timestamp.strftime("%Y-%m-%d %H:%M:%S") if hasattr(a.timestamp, 'strftime') else str(a.timestamp)
                 } for a in audits]
-                st.dataframe(pd.DataFrame(audit_records), use_container_width=True, hide_index=True)
+                st.dataframe(pd.DataFrame(audit_records), width="stretch", hide_index=True)
     except Exception:
         pass
 
@@ -2002,7 +2002,7 @@ with tab6:
     df_exp = pd.DataFrame(st.session_state.tara_items)
     st.dataframe(
         df_exp[["id", "asset", "boundary", "stride", "mitre", "feasibility", "impact", "risk", "status"]],
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         column_config={
             "id":          st.column_config.TextColumn("ID"),
@@ -2020,7 +2020,7 @@ with tab6:
             data=df_exp.to_csv(index=False).encode('utf-8'),
             file_name=f"AutoSec_TARA_{st.session_state.current_architecture_name.replace(' ', '_')}.csv",
             mime="text/csv",
-            use_container_width=True
+            width="stretch"
         )
     with c_e2:
         st.download_button(
@@ -2028,10 +2028,10 @@ with tab6:
             data=json.dumps(st.session_state.tara_items, indent=2).encode('utf-8'),
             file_name=f"AutoSec_TARA_{st.session_state.current_architecture_name.replace(' ', '_')}.json",
             mime="application/json",
-            use_container_width=True
+            width="stretch"
         )
     with c_e3:
-        if st.button("Compile UNECE R155 Audit PDF", use_container_width=True):
+        if st.button("Compile UNECE R155 Audit PDF", width="stretch"):
             try:
                 from app.services.export_service import ExportService
                 from app.core.schemas import ThreatScenario
@@ -2060,7 +2060,7 @@ with tab6:
                 ExportService.to_pdf(pdf_threats, pdf_out, system_name=st.session_state.current_architecture_name)
                 with open(pdf_out, "rb") as pf:
                     pdf_bytes = pf.read()
-                st.download_button("Download Compiled PDF Report", data=pdf_bytes, file_name=f"AutoSec_TARA_Audit_{st.session_state.current_architecture_name.replace(' ', '_')}.pdf", mime="application/pdf", use_container_width=True)
+                st.download_button("Download Compiled PDF Report", data=pdf_bytes, file_name=f"AutoSec_TARA_Audit_{st.session_state.current_architecture_name.replace(' ', '_')}.pdf", mime="application/pdf", width="stretch")
                 st.success("ISO 21434 / UNECE R155 Audit Package PDF compiled successfully!")
             except Exception as e:
                 st.error(f"PDF generation notice: {e}")
@@ -2195,7 +2195,7 @@ with tab7:
                 })
 
             df_ml_eval = pd.DataFrame(ml_eval_records)
-            st.dataframe(df_ml_eval, use_container_width=True, hide_index=True)
+            st.dataframe(df_ml_eval, width="stretch", hide_index=True)
 
         # ── SECTION 3: INGESTED ARCHITECTURE ML DIAGNOSTICS & CONCORDANCE MATRICES
         st.markdown("<br/>", unsafe_allow_html=True)
