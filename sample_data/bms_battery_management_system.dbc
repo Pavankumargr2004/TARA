@@ -1,0 +1,36 @@
+VERSION "BMS_800V_Architecture_CANFD_v2.0"
+
+NS_ :
+    BS_
+    BU_
+
+BU_: BMS_Master Inverter_Controller Thermal_Manager FastCharger_ECU
+
+BO_ 1100 BMS_PackTelemetry: 64 BMS_Master
+ SG_ PackTotalVoltage : 0|16@1+ (0.1,0) [0|1000] "V" Inverter_Controller
+ SG_ PackCurrentDraw : 16|16@1- (0.1,0) [-800|800] "A" Inverter_Controller
+ SG_ StateOfCharge : 32|8@1+ (0.5,0) [0|100] "%" Inverter_Controller
+ SG_ HighestCellTemp : 40|8@1- (1,-40) [-40|120] "C" Thermal_Manager
+ SG_ ThermalRunawayAlert : 48|2@1+ (1,0) [0|3] "" Thermal_Manager,FastCharger_ECU
+ SG_ BMS_SecOC_MAC : 50|14@1+ (1,0) [0|16383] "" Inverter_Controller
+
+BO_ 1105 BMS_ContactorCommand: 64 Inverter_Controller
+ SG_ MainPositiveContactor : 0|2@1+ (1,0) [0|3] "" BMS_Master
+ SG_ MainNegativeContactor : 2|2@1+ (1,0) [0|3] "" BMS_Master
+ SG_ PrechargeRelayStatus : 4|2@1+ (1,0) [0|3] "" BMS_Master
+ SG_ PyroFuseFireTrigger : 6|2@1+ (1,0) [0|3] "" BMS_Master
+ SG_ ContactorAuthCode : 8|16@1+ (1,0) [0|65535] "" BMS_Master
+
+BO_ 1110 FastCharge_PowerNegotiation: 64 FastCharger_ECU
+ SG_ MaxAllowedChargeVoltage : 0|16@1+ (0.1,0) [0|1000] "V" BMS_Master
+ SG_ MaxAllowedChargeCurrent : 16|16@1+ (0.1,0) [0|600] "A" BMS_Master
+ SG_ ChargerIsolationResistance : 32|16@1+ (1,0) [0|50000] "kOhm" BMS_Master
+
+# ==============================================================================
+# TRUST BOUNDARIES & CYBERSECURITY CONTROLS (ISO/SAE 21434)
+# ==============================================================================
+# Trust Boundary TB-BMS-01: Inverter CAN-FD Bus ↔ High Voltage Contactor Relays
+# Threat: Malicious actuation of PyroFuseFireTrigger or opening contactors under heavy acceleration.
+# STRIDE: Tampering / Denial of Service
+# Impact: Safety: Severe-Injuries / Critical; Feasibility: Medium
+# Mitigation: SecOC AUTOSAR hardware cryptographic MAC verification on BO_ 1105.

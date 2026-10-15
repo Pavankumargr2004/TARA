@@ -1,0 +1,60 @@
+{
+  "system_name": "Car Connectivity Consortium (CCC) Digital Key 3.0 Architecture",
+  "vehicle_class": "Connected Luxury EV 2026",
+  "standards": ["CCC Digital Key Release 3.0", "FiRa Consortium UWB Spec", "ISO/SAE 21434"],
+  "subsystems": [
+    {
+      "subsystem_id": "DK-NFC-01",
+      "name": "Driver Door Handle NFC Transceiver",
+      "frequency": "13.56 MHz (ISO 14443 Type A)",
+      "bus": "Automotive LIN Sub-bus",
+      "role": "Backup access when smartphone battery is depleted (Card Emulation Mode)"
+    },
+    {
+      "subsystem_id": "DK-BLE-02",
+      "name": "Cabin & Exterior BLE 5.3 Antenna Array",
+      "frequency": "2.4 GHz ISM Band",
+      "bus": "CAN-FD Body Subnet",
+      "role": "Wake-up signal, secure channel pairing, and out-of-band key exchange"
+    },
+    {
+      "subsystem_id": "DK-UWB-03",
+      "name": "High-Precision Ultra-Wideband (UWB) Radar Nodes",
+      "frequency": "Channels 5 & 9 (6.5 GHz - 8.0 GHz)",
+      "standard": "IEEE 802.15.4z with Scrambled Timestamp Sequence (STS)",
+      "bus": "Automotive Ethernet 100Base-T1",
+      "role": "Sub-decimeter Time-of-Flight (ToF) distance bounding to prevent relay attacks"
+    },
+    {
+      "subsystem_id": "DK-eSE-04",
+      "name": "Automotive Embedded Secure Element (eSE)",
+      "security_certification": "Common Criteria EAL6+ High",
+      "role": "Vehicle OEM root private key storage, applet execution, owner key authorization"
+    }
+  ],
+  "trust_boundaries": [
+    {
+      "boundary_id": "TB-DK-01",
+      "source": "Unbounded RF Medium (2.4 GHz BLE & 6.5-8 GHz UWB)",
+      "target": "Digital Key Master Controller",
+      "interface": "BLE 5.3 & IEEE 802.15.4z Radio Channels",
+      "risk_level": "Critical",
+      "stride_category": "Spoofing / Elevation of Privilege",
+      "description": "Relay station attack (RSA) using directional amplifiers or wormhole radio link to unlock vehicle and drive away without physical key."
+    },
+    {
+      "boundary_id": "TB-DK-02",
+      "source": "Door Handle LIN Sub-bus",
+      "target": "Body Control Module (BCM)",
+      "interface": "LIN Bus Transceiver Interface",
+      "risk_level": "High",
+      "stride_category": "Tampering",
+      "description": "Physical headlight or door handle harness tapping injecting spoofed door unlock commands."
+    }
+  ],
+  "security_controls": {
+    "distance_bounding": "Enforced IEEE 802.15.4z cryptographic STS validation ensures packet flight time matches physical speed of light.",
+    "cryptographic_pairing": "SPAKE2+ password authenticated key exchange with ephemeral Diffie-Hellman keys over BLE.",
+    "anti_tampering": "Active shield mesh and tamper-detecting sensors on door handle LIN transceiver nodes."
+  }
+}

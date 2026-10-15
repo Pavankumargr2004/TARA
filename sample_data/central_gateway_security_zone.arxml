@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AUTOSAR xmlns="http://autosar.org/schema/r4.0" xmlns:xsi="http://www.w3.org/2000/svg">
+  <AR-PACKAGES>
+    <AR-PACKAGE>
+      <SHORT-NAME>CentralSecurityGateway_Topology</SHORT-NAME>
+      <ELEMENTS>
+        <SYSTEM>
+          <SHORT-NAME>Central_Gateway_E_E_Architecture</SHORT-NAME>
+          <CATEGORY>AUTOMOTIVE_SECURITY_GATEWAY</CATEGORY>
+          <FIBEX-ELEMENTS>
+            <ECU-INSTANCE>
+              <SHORT-NAME>Central_Security_Gateway_ECU</SHORT-NAME>
+              <DOMAIN>Security_Core</DOMAIN>
+              <BUS-REF>AutomotiveEthernet_Backbone_1Gbps</BUS-REF>
+              <SECURITY-LEVEL>ASIL-B</SECURITY-LEVEL>
+            </ECU-INSTANCE>
+            <ECU-INSTANCE>
+              <SHORT-NAME>Powertrain_Domain_Controller</SHORT-NAME>
+              <DOMAIN>Powertrain</DOMAIN>
+              <BUS-REF>CANFD_Powertrain_Subnet</BUS-REF>
+              <SECURITY-LEVEL>ASIL-D</SECURITY-LEVEL>
+            </ECU-INSTANCE>
+            <ECU-INSTANCE>
+              <SHORT-NAME>Diagnostics_OBD_Edge_Node</SHORT-NAME>
+              <DOMAIN>Diagnostics</DOMAIN>
+              <BUS-REF>DoIP_ISO13400_Interface</BUS-REF>
+              <SECURITY-LEVEL>QM</SECURITY-LEVEL>
+            </ECU-INSTANCE>
+          </FIBEX-ELEMENTS>
+        </SYSTEM>
+        <FIREWALL-FILTER-TABLE>
+          <SHORT-NAME>Gateway_Packet_Filtering_Policy</SHORT-NAME>
+          <ROUTING-RULES>
+            <RULE id="RULE-01" action="DROP">
+              <SOURCE-INTERFACE>DoIP_Diagnostics_Port</SOURCE-INTERFACE>
+              <TARGET-INTERFACE>CANFD_Powertrain_Subnet</TARGET-INTERFACE>
+              <PROTOCOL>SOME/IP</PROTOCOL>
+              <CRITERIA>VehicleSpeed &gt; 0 km/h</CRITERIA>
+            </RULE>
+          </ROUTING-RULES>
+        </FIREWALL-FILTER-TABLE>
+        <SECURITY-EVENT-COLLECTOR>
+          <SHORT-NAME>Distributed_IDS_Sensor_Manager</SHORT-NAME>
+          <LOGGING-PROTOCOL>AUTOSAR_SECMON_SOMEIP</LOGGING-PROTOCOL>
+          <TRUST-BOUNDARIES>
+            <BOUNDARY id="TB-GW-01" risk="Critical" stride="Tampering / Elevation of Privilege">
+              <SOURCE>Diagnostics OBD-II Physical Port</SOURCE>
+              <TARGET>Central Security Gateway Kernel</TARGET>
+              <INTERFACE>DoIP ISO 13400-2 Port 13400</INTERFACE>
+              <CSR>CSR-GW-01: Enforce IEEE 802.1X port-based access control and zero-trust DoIP authentication tokens.</CSR>
+            </BOUNDARY>
+            <BOUNDARY id="TB-GW-02" risk="High" stride="Denial of Service">
+              <SOURCE>Infotainment Ethernet Segment</SOURCE>
+              <TARGET>Central Security Gateway Routing Core</TARGET>
+              <INTERFACE>1000Base-T1 Inter-Domain Bridge</INTERFACE>
+              <CSR>CSR-GW-02: Implement hardware-accelerated rate limiting and Deep Packet Inspection (DPI) to mitigate CAN-FD flooding.</CSR>
+            </BOUNDARY>
+          </TRUST-BOUNDARIES>
+        </SECURITY-EVENT-COLLECTOR>
+      </ELEMENTS>
+    </AR-PACKAGE>
+  </AR-PACKAGES>
+</AUTOSAR>

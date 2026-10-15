@@ -1,0 +1,42 @@
+# ==============================================================================
+# SPECIFICATION: High-Power Combined Charging System (CCS) & ISO 15118-20
+# Vehicle Application: Electric Long-Haul Truck & High-Performance EV
+# Cybersecurity Standard: ISO/SAE 21434 Section 9 & DIN 70121 / ISO 15118
+# ==============================================================================
+
+1. OVERVIEW & CHARGING TOPOLOGY
+The High-Power DC Charging subsystem implements ISO 15118-20 "Plug & Charge"
+and Vehicle-to-Grid (V2G) bidirectional power transfer. The Electric Vehicle
+Communication Controller (EVCC) communicates with the Supply Equipment Communication
+Controller (SECC) in the public DC Fast Charger using Powerline Communication (PLC).
+
+2. NETWORK STACK & CRYPTOGRAPHIC LAYERS
+- Physical Layer: Combined Charging System (CCS) Type 2 Inlet with Control Pilot (CP) and Protective Earth (PE) lines.
+- Data Link: HomePlug Green PHY Powerline Communication (PLC) over Control Pilot pin.
+- Network Layer: IPv6 with Stateless Address Autoconfiguration (SLAAC).
+- Transport & Security: TLS 1.3 with ECDHE-ECDSA cipher suites and OCSP stapling.
+- Application Layer: V2G Transfer Protocol (V2GTP) with EXI (Efficient XML Interchange) payload encoding.
+
+3. TRUST BOUNDARIES & THREAT SCENARIOS
+
+[Trust Boundary TB-CHG-01: Public DC Fast Charger SECC <-> Vehicle EVCC]
+- Interface: Powerline Communication (PLC) over CP line (1.8 - 30 MHz band)
+- Risk Level: Critical
+- STRIDE Category: Tampering / Spoofing / Elevation of Privilege
+- Threat Scenario: Compromised public charging station injects manipulated EXI charging schedules or falsified payment contract vouchers to induce battery thermal runaway or fraudulent billing.
+- Attack Feasibility: Medium (Adversary possesses commercial CCS tester and malicious firmware on charger).
+- Impact: Severe Safety (Battery fire or overvoltage hazard) and High Financial.
+- Mitigation: Hardware Cryptographic Secure Element enforces ISO 15118 V2G PKI certificate chain validation. OEM root CA verification prevents rogue chargers from accepting unverified sessions.
+
+[Trust Boundary TB-CHG-02: EVCC Charging Controller <-> High Voltage Battery Master]
+- Interface: Internal Isolated CAN-FD Subnet
+- Risk Level: High
+- STRIDE Category: Denial of Service / Tampering
+- Threat Scenario: Rogue PLC frame decodes into malformed internal CAN-FD message, commanding contactors to open under 400 kW high-current charging load (causing electrical arc flash).
+- Attack Feasibility: Low (Requires breaking through EVCC TCP/IP stack).
+- Impact: Severe Safety (Inlet destruction, arc flash risk to user).
+- Mitigation: SecOC cryptographic message authentication on all CAN-FD power negotiation commands. Hardware emergency stop loop hardwired independent of software microcontroller.
+
+4. CYBERSECURITY GOALS & REQUIREMENTS
+- CSG-CHG-01: Ensure all financial contract certificates and billing tokens use ECDSA P-256 signatures validated against V2G Root CA.
+- CSG-CHG-02: Provide galvanic isolation and tamper resistance on the HomePlug Green PHY modem front-end.

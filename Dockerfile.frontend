@@ -1,0 +1,29 @@
+FROM python:3.10-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_DEFAULT_TIMEOUT=1000 \
+    PIP_RETRIES=5
+
+WORKDIR /app
+
+# Install system dependencies (curl for container health checks)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install lightweight frontend dependencies (no PyTorch, no CUDA, no ChromaDB/LangChain)
+COPY requirements-frontend.txt .
+RUN pip install --no-cache-dir \
+    --default-timeout=1000 \
+    --retries 5 \
+    -r requirements-frontend.txt
+
+# Copy application source
+COPY . .
+
+# Expose Streamlit port
+EXPOSE 8501
+
+# Default command: Runs the Streamlit interactive UI
+CMD ["streamlit", "run", "frontend/app.py", "--server.port", "8501", "--server.address", "0.0.0.0"]

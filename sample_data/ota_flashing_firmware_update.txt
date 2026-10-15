@@ -1,0 +1,44 @@
+# ==============================================================================
+# AUTOMOTIVE SPECIFICATION: Over-The-Air (OTA) Firmware Flashing Architecture
+# Standard: UNECE R156 (SUMS) & ISO/SAE 21434 Section 10
+# Vehicle Architecture: Premium Electric Crossover 2026
+# ==============================================================================
+
+1. SYSTEM OVERVIEW
+The Over-The-Air (OTA) Software Update Management System (SUMS) coordinates
+firmware and configuration deployments across 42 vehicle ECUs. Flashing is
+orchestrated by the Central Gateway utilizing Diagnostic over IP (DoIP - ISO 13400)
+and Unified Diagnostic Services (UDS - ISO 14229-1).
+
+2. COMPONENT TOPOLOGY
+- Primary Orchestrator: Central Telematics Master (ECU-OTA-01)
+- Target Repositories: Dual A/B Active/Passive Flash Partitions on all High-Performance Compute (HPC) nodes.
+- Transport Protocols:
+  * External Cloud to Vehicle: HTTPS / TLS 1.3 with Mutual Certificate Authentication (mTLS)
+  * Internal Distribution: DoIP over 1000Base-T1 Ethernet Backbone
+  * Secondary Distribution: UDS Flashing over CAN-FD and LIN
+
+3. TRUST BOUNDARIES & THREAT SCENARIOS
+
+[Trust Boundary TB-OTA-01: OEM Cloud OTA Backend <-> Telematics Master]
+- Interface: 5G Cellular / Wi-Fi Hotspot
+- Risk Level: Critical
+- STRIDE Category: Tampering / Elevation of Privilege
+- Threat Description: Man-in-the-Middle injection of malicious ECU firmware binary or downgrade attack to vulnerable prior version.
+- Attack Feasibility: Medium (Specialist expertise, standard LTE test equipment)
+- Impact: Severe Safety / Severe Operational
+- Mitigation: Dual-layer asymmetric signature verification (ECDSA P-384) signed within OEM Offline Hardware Root of Trust. Monotonic hardware rollback counter burned in eFuse.
+
+[Trust Boundary TB-OTA-02: Telematics Master <-> Powertrain Zone Gateway]
+- Interface: DoIP Ethernet Subnet (ISO 13400-2 Port 13400)
+- Risk Level: High
+- STRIDE Category: Spoofing / Tampering
+- Threat Description: Unauthorized activation of UDS RoutineControl ($31) or RequestDownload ($34) during active vehicle driving mode.
+- Attack Feasibility: High (Physical access to OBD-II or compromised infotainment)
+- Impact: Severe Safety (Inverter motor shutoff at highway speeds)
+- Mitigation: UDS SecurityAccess ($27) requiring asymmetric challenge-response via Thales Luna Hardware Security Module. Pre-condition lock: Vehicle speed must equal 0.0 km/h, Park gear engaged, and High Voltage interlock confirmed.
+
+4. COMPLIANCE & CYBERSECURITY GOALS
+- CSG-OTA-01: Ensure integrity and authenticity of all software packages delivered over the air.
+- CSG-OTA-02: Prevent simultaneous flashing of redundant steering and braking channels.
+- CSG-OTA-03: Provide verifiable audit logs conforming to UNECE R156 software identification number (RXSWIN) regulations.

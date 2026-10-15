@@ -1,0 +1,36 @@
+VERSION "BrakeByWire_ASILD_CANFD_v4.2"
+
+NS_ :
+    BS_
+    BU_
+
+BU_: BrakePedal_Sensor ESP_Actuator ElectricBooster_ECU Central_Chassis_Master
+
+BO_ 2048 BBW_PedalStatus: 64 BrakePedal_Sensor
+ SG_ PedalTravelPercentage : 0|16@1+ (0.01,0) [0|100] "%" ESP_Actuator,ElectricBooster_ECU
+ SG_ PedalDisplacementRate : 16|16@1- (0.1,0) [-500|500] "mm/s" ESP_Actuator
+ SG_ DriverBrakingIntent : 32|4@1+ (1,0) [0|7] "" ESP_Actuator
+ SG_ BBW_AliveCounter : 48|8@1+ (1,0) [0|255] "" ESP_Actuator
+ SG_ BBW_SecOC_Tag : 56|8@1+ (1,0) [0|255] "" ESP_Actuator
+
+BO_ 2050 ESP_HydraulicPressure: 64 ESP_Actuator
+ SG_ FrontLeftCaliperPressure : 0|16@1+ (0.1,0) [0|250] "bar" Central_Chassis_Master
+ SG_ FrontRightCaliperPressure : 16|16@1+ (0.1,0) [0|250] "bar" Central_Chassis_Master
+ SG_ RearLeftCaliperPressure : 32|16@1+ (0.1,0) [0|250] "bar" Central_Chassis_Master
+ SG_ RearRightCaliperPressure : 48|16@1+ (0.1,0) [0|250] "bar" Central_Chassis_Master
+
+BO_ 2060 Decel_EmergencyRequest: 64 Central_Chassis_Master
+ SG_ TargetDeceleration_ms2 : 0|16@1+ (0.01,0) [0|15] "m/s2" ESP_Actuator
+ SG_ AutonomousEmergencyBrakingActive : 16|2@1+ (1,0) [0|3] "" ESP_Actuator
+ SG_ DynamicBrakePrefill : 18|2@1+ (1,0) [0|3] "" ESP_Actuator
+
+# ==============================================================================
+# ISO/SAE 21434 TARA THREAT MODELLING PARAMETERS
+# ==============================================================================
+# Trust Boundary TB-BBW-01: ADAS Domain Ethernet Gateway -> Brake-by-Wire CAN-FD Bus
+# Threat Scenario: Injection of spoofed Decel_EmergencyRequest (TargetDeceleration_ms2 = 12.0) causing phantom panic stop on open motorway.
+# STRIDE: Spoofing / Tampering
+# Safety Impact: Life-Threatening (ISO 26262 ASIL-D / ISO 21434 Severe)
+# Attack Feasibility: Low-to-Medium (Requires compromised gateway or bus tap)
+# Risk Level: Level 5 (Critical)
+# Required Cybersecurity Control: Strict SecOC Truncated AES-128 CMAC authentication with rolling freshness value on every cycle.

@@ -1,0 +1,65 @@
+{
+  "project_name": "Connected Cockpit 2026 — IVI & Digital Cluster",
+  "version": "1.3.0",
+  "compliance": ["ISO/SAE 21434", "UNECE R155", "Android Automotive OS Security Requirements"],
+  "ecus": [
+    {
+      "ecu_id": "ECU-201",
+      "name": "Cockpit Domain Controller (CDC)",
+      "domain": "Infotainment",
+      "os": "Android Automotive OS 14 (SELinux Enforcing)",
+      "bus": "1000Base-T1 Automotive Ethernet",
+      "safety_level": "QM"
+    },
+    {
+      "ecu_id": "ECU-202",
+      "name": "Safety-Critical Instrument Cluster",
+      "domain": "Instrument Cluster",
+      "os": "BlackBerry QNX Neutrino 7.1 (ASIL-B Certified)",
+      "bus": "100Base-T1 / LVDS Display Bridge",
+      "safety_level": "ASIL-B"
+    },
+    {
+      "ecu_id": "ECU-203",
+      "name": "Wireless Connectivity Unit",
+      "domain": "Connectivity",
+      "bus": "PCIe Gen 3 / High Speed UART",
+      "safety_level": "QM"
+    }
+  ],
+  "trust_boundaries": [
+    {
+      "boundary_id": "TB-IVI-01",
+      "source": "Third-Party Android App Sandbox",
+      "target": "CDC Hypervisor & Vehicle HAL",
+      "interface": "Android VHAL (Vehicle Hardware Abstraction Layer)",
+      "risk_level": "Critical",
+      "stride_category": "Elevation of Privilege",
+      "description": "Malicious sideloaded Android app escapes container sandbox via kernel vulnerability to access raw VHAL CAN frames."
+    },
+    {
+      "boundary_id": "TB-IVI-02",
+      "source": "In-Cabin Bluetooth & Wi-Fi Hotspot",
+      "target": "Cockpit Domain Controller OS",
+      "interface": "Bluetooth 5.2 / Wi-Fi 6 Stack",
+      "risk_level": "High",
+      "stride_category": "Tampering / Denial of Service",
+      "description": "Remote code execution via heap overflow in BlueZ/Fluoride stack from passenger smartphone."
+    },
+    {
+      "boundary_id": "TB-IVI-03",
+      "source": "CDC Infotainment Subsystem",
+      "target": "Safety Instrument Cluster (ASIL-B)",
+      "interface": "Hardware Shared Memory (VirtIO-GPU)",
+      "risk_level": "High",
+      "stride_category": "Information Disclosure / Spoofing",
+      "description": "Compromised Android IVI injects false tell-tales (check engine, ABS malfunction) into QNX instrument cluster display."
+    }
+  ],
+  "security_controls": {
+    "hypervisor_isolation": "Hardware-enforced Type-1 Hypervisor memory partitions",
+    "secure_boot": "eHSM hardware root of trust with RSA-3072 signature verification",
+    "selinux_mode": "Strict Enforcing with MLS policy",
+    "thales_mitigation": "Thales Trusted App Sandbox & Luna PCIe HSM for key provisioning"
+  }
+}
