@@ -2,20 +2,22 @@ version: '3.8'
 
 services:
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.api
     restart: always
     environment:
       - DATABASE_URL=postgresql://tara_user:tara_password@db:5432/tara_db
       - ENVIRONMENT=production
     volumes:
-
       - vector_data:/app/vectorstore
     depends_on:
       - db
 
   frontend:
-    build: .
-    command: streamlit run frontend/app.py --server.port 8501 --server.address 0.0.0.0
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
     restart: always
     depends_on:
       - api

@@ -16,3 +16,4 @@ vectorstore/
 .coverage
 htmlcov/
 .DS_Store
+.mypy_cache/

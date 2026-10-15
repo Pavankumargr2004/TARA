@@ -2,8 +2,19 @@ services:
   - type: web
     name: tara-backend-api
     env: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements-api.txt
     startCommand: uvicorn app.api.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.8
+      - key: PROJECT_NAME
+        value: AutoSec TARA Assistant
+
+  - type: web
+    name: tara-frontend-ui
+    env: python
+    buildCommand: pip install -r requirements-frontend.txt
+    startCommand: streamlit run frontend/app.py --server.port $PORT --server.address 0.0.0.0
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.8
