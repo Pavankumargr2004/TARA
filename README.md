@@ -154,10 +154,17 @@ tara-assistant/
 ├── data/
 │   ├── tara.db                         # SQLite audit and threat database
 │   └── threat_training_data.csv        # ISO 21434 synthetic ML training dataset
-├── docker-compose.yml                  # Local development container orchestration
-├── docker-compose.prod.yml             # Production container orchestration
-├── Dockerfile                          # Optimized multi-stage container build
-├── requirements.txt                    # Project Python dependencies
+├── docker-compose.yml                  # Local development container orchestration (ports 8001 / 8502)
+├── docker-compose.prod.yml             # Production container orchestration with Nginx & Postgres
+├── nginx.conf                          # Production Nginx reverse proxy configuration
+├── render.yaml                         # Render 1-click cloud blueprint deployment
+├── Dockerfile                          # Optimized multi-stage container build (api / frontend targets)
+├── Dockerfile.api                      # Dedicated FastAPI + CPU PyTorch container build
+├── Dockerfile.frontend                 # Lightweight Streamlit container build (no PyTorch/CUDA bloat)
+├── requirements.txt                    # Unified production Python dependencies
+├── requirements-api.txt                # Dedicated backend & RAG dependencies
+├── requirements-frontend.txt           # Dedicated UI & visualization dependencies
+├── requirements-dev.txt                # Development & testing dependencies (pytest, flake8)
 ├── AutoSec_TARA_Assistant_Project_Report.pdf      # Complete 8-page Technical Project Report
 └── AutoSec_TARA_Assistant_Presentation_Guide.pdf # 10-slide Executive Presentation Guide
 ```
@@ -180,24 +187,24 @@ cd TARA/tara-assistant
 
 # 2. Create and activate a virtual environment
 python -m venv venv
-# Windows:
-venv\Scripts\activate
+# Windows PowerShell:
+.\venv\Scripts\Activate.ps1
 # Linux/macOS:
 source venv/bin/activate
 
 # 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Start the Streamlit Interactive Workbench
-streamlit run frontend/app.py --server.port 8501
+# 4. Start the Streamlit Interactive Workbench (Default port 8501 or 8502)
+streamlit run frontend/app.py --server.port 8502
 
 # 5. Start the FastAPI Enterprise REST Server (in a separate terminal)
-uvicorn app.api.main:app --reload --port 8000
+python -m uvicorn app.api.main:app --port 8001 --reload
 ```
 
-- **Streamlit Workbench**: [http://localhost:8501](http://localhost:8501)
-- **FastAPI Documentation (Swagger UI)**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **FastAPI Alternative Docs (ReDoc)**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+- **Streamlit Workbench**: [http://localhost:8502](http://localhost:8502) (or [http://localhost:8501](http://localhost:8501))
+- **FastAPI Documentation (Swagger UI)**: [http://localhost:8001/docs](http://localhost:8001/docs)
+- **FastAPI Alternative Docs (ReDoc)**: [http://localhost:8001/redoc](http://localhost:8001/redoc)
 
 ---
 
@@ -206,14 +213,14 @@ uvicorn app.api.main:app --reload --port 8000
 To launch the complete containerized stack:
 
 ```bash
-# Build and run with Docker Compose
-docker-compose up --build
+# Build and run with Docker Compose (FastAPI on 8001, Streamlit on 8502)
+docker compose up --build
 
 # Run in background (detached mode)
-docker-compose up -d --build
+docker compose up -d --build
 
 # Stop the containers
-docker-compose down
+docker compose down
 ```
 
 ---

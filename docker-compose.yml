@@ -1,8 +1,10 @@
 services:
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.api
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       - .:/app
     environment:
@@ -10,11 +12,14 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
 
   frontend:
-    build: .
-    command: streamlit run frontend/app.py --server.port 8501 --server.address 0.0.0.0
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
     ports:
-      - "8501:8501"
+      - "8502:8501"
     volumes:
       - .:/app
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
     depends_on:
       - api

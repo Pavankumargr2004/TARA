@@ -1634,70 +1634,73 @@ with tab3:
         "low":      '<span class="chip chip-low">Low</span>',
     }
 
-    for idx, item in enumerate(st.session_state.tara_items):
-        sev = item.get("severity", "high")
-        chip = CHIP_MAP.get(sev, CHIP_MAP["high"])
-        feasibility_chip = '<span class="chip chip-medium">Medium Feasibility</span>' if item["feasibility"] == "Medium" else '<span class="chip chip-high">High Feasibility</span>'
-        impact_chip = '<span class="chip chip-critical">Severe Impact</span>' if item["impact"] == "Severe" else '<span class="chip chip-high">Major Impact</span>'
+    if not st.session_state.tara_items:
+        st.info("No threat scenarios currently loaded. Select a pre-configured architecture in Tab 1 or click 'Inject Threat Scenario' above to populate the matrix.")
+    else:
+        for idx, item in enumerate(st.session_state.tara_items):
+            sev = item.get("severity", "high")
+            chip = CHIP_MAP.get(sev, CHIP_MAP["high"])
+            feasibility_chip = '<span class="chip chip-medium">Medium Feasibility</span>' if item.get("feasibility") == "Medium" else '<span class="chip chip-high">High Feasibility</span>'
+            impact_chip = '<span class="chip chip-critical">Severe Impact</span>' if item.get("impact") == "Severe" else '<span class="chip chip-high">Major Impact</span>'
 
-        st.markdown(f"""
-        <div class="threat-row">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
-                <div>
-                    <span class="threat-id">{item['id']}</span>
-                    <div class="threat-asset">{item['asset']}</div>
+            st.markdown(f"""
+            <div class="threat-row">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+                    <div>
+                        <span class="threat-id">{item['id']}</span>
+                        <div class="threat-asset">{item['asset']}</div>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+                        {chip}
+                        {feasibility_chip}
+                        {impact_chip}
+                        <span class="chip chip-info">Risk Level {item['risk']}</span>
+                    </div>
                 </div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
-                    {chip}
-                    {feasibility_chip}
-                    {impact_chip}
-                    <span class="chip chip-info">Risk Level {item['risk']}</span>
+                <div class="threat-meta">
+                    <strong style="color:#c4b5fd">Trust Boundary:</strong>
+                    <code>{item['boundary']}</code>
+                    &nbsp;·&nbsp;
+                    <strong style="color:#c4b5fd">STRIDE:</strong>
+                    <span style="color:#00f5d4">{item['stride']}</span>
+                    &nbsp;·&nbsp;
+                    <strong style="color:#c4b5fd">MITRE:</strong>
+                    <span style="color:#ffb703;font-family:'JetBrains Mono',monospace;font-size:11px">{item['mitre']}</span>
                 </div>
+                <div class="threat-desc">{item['description']}</div>
+                <div class="csr-box"><strong>Cybersecurity Requirement:</strong> {item['csr']}</div>
             </div>
-            <div class="threat-meta">
-                <strong style="color:#c4b5fd">Trust Boundary:</strong>
-                <code>{item['boundary']}</code>
-                &nbsp;·&nbsp;
-                <strong style="color:#c4b5fd">STRIDE:</strong>
-                <span style="color:#00f5d4">{item['stride']}</span>
-                &nbsp;·&nbsp;
-                <strong style="color:#c4b5fd">MITRE:</strong>
-                <span style="color:#ffb703;font-family:'JetBrains Mono',monospace;font-size:11px">{item['mitre']}</span>
-            </div>
-            <div class="threat-desc">{item['description']}</div>
-            <div class="csr-box"><strong>Cybersecurity Requirement:</strong> {item['csr']}</div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
-        with st.expander(f"Recalculate Attack Potential — {item['id']}"):
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                t_val = st.selectbox("Elapsed Time", ["< 1 Month (0)", "<= 3 Months (1)", "<= 6 Months (4)", "> 6 Months (10)"], key=f"t_{idx}")
-                e_val = st.selectbox("Specialist Expertise", ["Layman (0)", "Proficient (3)", "Expert (6)", "Multiple Experts (8)"], key=f"e_{idx}")
-            with c2:
-                k_val = st.selectbox("Knowledge of Item", ["Public (0)", "Restricted (3)", "Confidential (7)", "Strictly Confidential (11)"], key=f"k_{idx}")
-                w_val = st.selectbox("Window of Opportunity", ["Unrestricted (0)", "Easy (1)", "Moderate (4)", "Difficult (10)"], key=f"w_{idx}")
-            with c3:
-                eq_val = st.selectbox("Equipment Required", ["Standard (0)", "Specialized (4)", "Bespoke (7)"], key=f"eq_{idx}")
-                if st.button("Re-evaluate Score", key=f"btn_calc_{idx}"):
-                    # ISO 21434 Annex G Attack Potential calculation
-                    t_score = int(t_val.split("(")[1].replace(")", ""))
-                    e_score = int(e_val.split("(")[1].replace(")", ""))
-                    k_score = int(k_val.split("(")[1].replace(")", ""))
-                    w_score = int(w_val.split("(")[1].replace(")", ""))
-                    eq_score = int(eq_val.split("(")[1].replace(")", ""))
-                    total_pts = t_score + e_score + k_score + w_score + eq_score
+            with st.expander(f"Recalculate Attack Potential — {item['id']}"):
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    t_val = st.selectbox("Elapsed Time", ["< 1 Month (0)", "<= 3 Months (1)", "<= 6 Months (4)", "> 6 Months (10)"], key=f"t_{idx}")
+                    e_val = st.selectbox("Specialist Expertise", ["Layman (0)", "Proficient (3)", "Expert (6)", "Multiple Experts (8)"], key=f"e_{idx}")
+                with c2:
+                    k_val = st.selectbox("Knowledge of Item", ["Public (0)", "Restricted (3)", "Confidential (7)", "Strictly Confidential (11)"], key=f"k_{idx}")
+                    w_val = st.selectbox("Window of Opportunity", ["Unrestricted (0)", "Easy (1)", "Moderate (4)", "Difficult (10)"], key=f"w_{idx}")
+                with c3:
+                    eq_val = st.selectbox("Equipment Required", ["Standard (0)", "Specialized (4)", "Bespoke (7)"], key=f"eq_{idx}")
+                    if st.button("Re-evaluate Score", key=f"btn_calc_{idx}"):
+                        # ISO 21434 Annex G Attack Potential calculation
+                        t_score = int(t_val.split("(")[1].replace(")", ""))
+                        e_score = int(e_val.split("(")[1].replace(")", ""))
+                        k_score = int(k_val.split("(")[1].replace(")", ""))
+                        w_score = int(w_val.split("(")[1].replace(")", ""))
+                        eq_score = int(eq_val.split("(")[1].replace(")", ""))
+                        total_pts = t_score + e_score + k_score + w_score + eq_score
 
-                    from app.core.risk_engine import calculate_attack_potential, impact_label_to_int, lookup_risk
-                    feas = calculate_attack_potential(t_score, e_score, k_score, w_score, eq_score)
-                    imp_score = impact_label_to_int(item.get("impact", "Major"))
-                    risk_lvl = lookup_risk(imp_score, feas)
+                        from app.core.risk_engine import calculate_attack_potential, impact_label_to_int, lookup_risk
+                        feas = calculate_attack_potential(t_score, e_score, k_score, w_score, eq_score)
+                        imp_score = impact_label_to_int(item.get("impact", "Major"))
+                        risk_lvl = lookup_risk(imp_score, feas)
 
-                    st.session_state.tara_items[idx]["feasibility"] = feas
-                    st.session_state.tara_items[idx]["risk"] = risk_lvl
-                    st.session_state.tara_items[idx]["severity"] = "critical" if risk_lvl >= 5 else ("high" if risk_lvl == 4 else ("medium" if risk_lvl == 3 else "low"))
-                    st.toast(f"{item['id']} re-evaluated: {feas} Feasibility, Level {risk_lvl} Risk (Potential Score: {total_pts})")
-                    st.rerun()
+                        st.session_state.tara_items[idx]["feasibility"] = feas
+                        st.session_state.tara_items[idx]["risk"] = risk_lvl
+                        st.session_state.tara_items[idx]["severity"] = "critical" if risk_lvl >= 5 else ("high" if risk_lvl == 4 else ("medium" if risk_lvl == 3 else "low"))
+                        st.toast(f"{item['id']} re-evaluated: {feas} Feasibility, Level {risk_lvl} Risk (Potential Score: {total_pts})")
+                        st.rerun()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1894,58 +1897,61 @@ with tab5:
         "Rejected": "chip-critical"
     }
 
-    for item in st.session_state.tara_items:
-        sc = STATUS_COLOR.get(item['status'], 'chip-info')
-        st.markdown(f"""
-        <div class="threat-row" style="margin-bottom:8px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-                <div>
-                    <span class="threat-id">{item['id']}</span>
-                    <div class="threat-asset" style="font-size:15px;">{item['asset']}</div>
+    if not st.session_state.tara_items:
+        st.info("No threat scenarios pending disposition. Ingest or select an automotive architecture in Tab 1 to initiate the engineer review workflow.")
+    else:
+        for item in st.session_state.tara_items:
+            sc = STATUS_COLOR.get(item.get('status', 'Pending Review'), 'chip-info')
+            st.markdown(f"""
+            <div class="threat-row" style="margin-bottom:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                        <span class="threat-id">{item['id']}</span>
+                        <div class="threat-asset" style="font-size:15px;">{item['asset']}</div>
+                    </div>
+                    <span class="chip {sc}">{item.get('status', 'Pending Review')}</span>
                 </div>
-                <span class="chip {sc}">{item['status']}</span>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
-        notes = st.text_input(
-            f"Disposition Rationale — {item['id']}",
-            value=item.get("notes", ""),
-            placeholder="Enter engineering rationale, mitigating factors, or residual risk acceptance justification...",
-            key=f"note_{item['id']}"
-        )
-        b_app, b_rej, _ = st.columns([1, 1, 4])
-        with b_app:
-            if st.button(f"Approve {item['id']}", key=f"app_{item['id']}"):
-                item['status'] = "Approved"
-                item['notes'] = notes
-                try:
-                    from app.database.session import get_db
-                    from app.database.models import ReviewAudit
-                    with next(get_db()) as db_sess:
-                        audit_entry = ReviewAudit(threat_id=item['id'], reviewer="Lead Auditor", action="Approved", rationale=notes or "Controls validated against ISO 21434.")
-                        db_sess.add(audit_entry)
-                        db_sess.commit()
-                except Exception:
-                    pass
-                st.toast(f"**{item['id']}** approved and logged to audit database")
-                st.rerun()
-        with b_rej:
-            if st.button(f"Reject {item['id']}", key=f"rej_{item['id']}"):
-                item['status'] = "Rejected"
-                item['notes'] = notes
-                try:
-                    from app.database.session import get_db
-                    from app.database.models import ReviewAudit
-                    with next(get_db()) as db_sess:
-                        audit_entry = ReviewAudit(threat_id=item['id'], reviewer="Lead Auditor", action="Rejected", rationale=notes or "Mitigation insufficient.")
-                        db_sess.add(audit_entry)
-                        db_sess.commit()
-                except Exception:
-                    pass
-                st.toast(f"**{item['id']}** rejected and logged to audit database")
-                st.rerun()
-        st.divider()
+            notes = st.text_input(
+                f"Disposition Rationale — {item['id']}",
+                value=item.get("notes", ""),
+                placeholder="Enter engineering rationale, mitigating factors, or residual risk acceptance justification...",
+                key=f"note_{item['id']}"
+            )
+            b_app, b_rej, _ = st.columns([1, 1, 4])
+            with b_app:
+                if st.button(f"Approve {item['id']}", key=f"app_{item['id']}"):
+                    item['status'] = "Approved"
+                    item['notes'] = notes
+                    try:
+                        from app.database.session import get_db
+                        from app.database.models import ReviewAudit
+                        with next(get_db()) as db_sess:
+                            audit_entry = ReviewAudit(threat_id=item['id'], reviewer="Lead Auditor", action="Approved", rationale=notes or "Controls validated against ISO 21434.")
+                            db_sess.add(audit_entry)
+                            db_sess.commit()
+                    except Exception:
+                        pass
+                    st.toast(f"**{item['id']}** approved and logged to audit database")
+                    st.rerun()
+            with b_rej:
+                if st.button(f"Reject {item['id']}", key=f"rej_{item['id']}"):
+                    item['status'] = "Rejected"
+                    item['notes'] = notes
+                    try:
+                        from app.database.session import get_db
+                        from app.database.models import ReviewAudit
+                        with next(get_db()) as db_sess:
+                            audit_entry = ReviewAudit(threat_id=item['id'], reviewer="Lead Auditor", action="Rejected", rationale=notes or "Mitigation insufficient.")
+                            db_sess.add(audit_entry)
+                            db_sess.commit()
+                    except Exception:
+                        pass
+                    st.toast(f"**{item['id']}** rejected and logged to audit database")
+                    st.rerun()
+            st.divider()
 
     try:
         from app.database.session import get_db
@@ -1976,94 +1982,101 @@ with tab6:
     <hr class="sec-divider"/>
     """, unsafe_allow_html=True)
 
-    # Summary metrics row
-    total = len(st.session_state.tara_items)
-    approved = sum(1 for i in st.session_state.tara_items if i['status'] == 'Approved')
-    pending  = sum(1 for i in st.session_state.tara_items if i['status'] == 'Pending Review')
-    critical = sum(1 for i in st.session_state.tara_items if i.get('severity') == 'critical')
+    if not st.session_state.tara_items:
+        st.info("No threat scenarios available for compliance export. Ingest an automotive architecture in Tab 1 to generate reports.")
+    else:
+        # Summary metrics row
+        total = len(st.session_state.tara_items)
+        approved = sum(1 for i in st.session_state.tara_items if i.get('status') == 'Approved')
+        pending  = sum(1 for i in st.session_state.tara_items if i.get('status') == 'Pending Review')
+        critical = sum(1 for i in st.session_state.tara_items if i.get('severity') == 'critical')
 
-    mc1, mc2, mc3, mc4 = st.columns(4)
-    for col, label, value, cls in [
-        (mc1, "Total Threats",  total,    "chip-info"),
-        (mc2, "Approved",       approved, "chip-low"),
-        (mc3, "Pending",        pending,  "chip-medium"),
-        (mc4, "Critical",       critical, "chip-critical"),
-    ]:
-        with col:
-            st.markdown(f"""
-            <div style="background:rgba(13,8,38,0.65);backdrop-filter:blur(16px);border:1px solid rgba(131,91,255,0.25);border-radius:14px;padding:20px;text-align:center;">
-                <div style="font-size:30px;font-weight:800;color:#ffffff;letter-spacing:-1px;">{value}</div>
-                <div style="font-size:11px;color:#c4b5fd;margin-top:4px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.8px;">{label}</div>
-            </div>
-            """, unsafe_allow_html=True)
+        mc1, mc2, mc3, mc4 = st.columns(4)
+        for col, label, value, cls in [
+            (mc1, "Total Threats",  total,    "chip-info"),
+            (mc2, "Approved",       approved, "chip-low"),
+            (mc3, "Pending",        pending,  "chip-medium"),
+            (mc4, "Critical",       critical, "chip-critical"),
+        ]:
+            with col:
+                st.markdown(f"""
+                <div style="background:rgba(13,8,38,0.65);backdrop-filter:blur(16px);border:1px solid rgba(131,91,255,0.25);border-radius:14px;padding:20px;text-align:center;">
+                    <div style="font-size:30px;font-weight:800;color:#ffffff;letter-spacing:-1px;">{value}</div>
+                    <div style="font-size:11px;color:#c4b5fd;margin-top:4px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.8px;">{label}</div>
+                </div>
+                """, unsafe_allow_html=True)
 
-    st.markdown("<br/>", unsafe_allow_html=True)
+        st.markdown("<br/>", unsafe_allow_html=True)
 
-    df_exp = pd.DataFrame(st.session_state.tara_items)
-    st.dataframe(
-        df_exp[["id", "asset", "boundary", "stride", "mitre", "feasibility", "impact", "risk", "status"]],
-        width="stretch",
-        hide_index=True,
-        column_config={
-            "id":          st.column_config.TextColumn("ID"),
-            "asset":       st.column_config.TextColumn("Asset"),
-            "risk":        st.column_config.NumberColumn("Risk Lvl", format="%d ★"),
-            "status":      st.column_config.TextColumn("Status"),
-        }
-    )
-
-    st.markdown("<br/>", unsafe_allow_html=True)
-    c_e1, c_e2, c_e3 = st.columns(3)
-    with c_e1:
-        st.download_button(
-            label="Export TARA Matrix (.CSV)",
-            data=df_exp.to_csv(index=False).encode('utf-8'),
-            file_name=f"AutoSec_TARA_{st.session_state.current_architecture_name.replace(' ', '_')}.csv",
-            mime="text/csv",
-            width="stretch"
+        df_exp = pd.DataFrame(st.session_state.tara_items)
+        expected_cols = ["id", "asset", "boundary", "stride", "mitre", "feasibility", "impact", "risk", "status"]
+        for c in expected_cols:
+            if c not in df_exp.columns:
+                df_exp[c] = ""
+        st.dataframe(
+            df_exp[expected_cols],
+            width="stretch",
+            hide_index=True,
+            column_config={
+                "id":          st.column_config.TextColumn("ID"),
+                "asset":       st.column_config.TextColumn("Asset"),
+                "risk":        st.column_config.NumberColumn("Risk Lvl", format="%d ★"),
+                "status":      st.column_config.TextColumn("Status"),
+            }
         )
-    with c_e2:
-        st.download_button(
-            label="Export JSON Report",
-            data=json.dumps(st.session_state.tara_items, indent=2).encode('utf-8'),
-            file_name=f"AutoSec_TARA_{st.session_state.current_architecture_name.replace(' ', '_')}.json",
-            mime="application/json",
-            width="stretch"
-        )
-    with c_e3:
-        if st.button("Compile UNECE R155 Audit PDF", width="stretch"):
-            try:
-                from app.services.export_service import ExportService
-                from app.core.schemas import ThreatScenario
-                pdf_threats = []
-                for item in st.session_state.tara_items:
-                    pdf_threats.append(ThreatScenario(
-                        threat_id=item['id'],
-                        target_asset=item['asset'],
-                        trust_boundary_id=item.get('boundary', 'TB-01'),
-                        stride_category=item.get('stride', 'Spoofing'),
-                        mitre_attack_id=item.get('mitre', 'T1565'),
-                        threat_description=item.get('description', ''),
-                        attack_path=item.get('attack_path', []),
-                        cybersecurity_requirement=item.get('csr', ''),
-                        thales_mitigation_control="Thales eHSM Secure Boot & SecOC",
-                        citations=["ISO/SAE 21434"],
-                        elapsed_time=1, expertise=1, knowledge=1, window=1, equipment=0,
-                        impact_safety="Major", impact_financial="Low", impact_operational="Major", impact_privacy="Low",
-                        calculated_feasibility=item.get('feasibility', 'Medium'),
-                        calculated_impact=item.get('impact', 'Major'),
-                        risk_level=item.get('risk', 4),
-                        review_status=item.get('status', 'Pending Review'),
-                        reviewer_notes=item.get('notes', '')
-                    ))
-                pdf_out = os.path.join(_proj_root, "AutoSec_TARA_Audit_Export.pdf")
-                ExportService.to_pdf(pdf_threats, pdf_out, system_name=st.session_state.current_architecture_name)
-                with open(pdf_out, "rb") as pf:
-                    pdf_bytes = pf.read()
-                st.download_button("Download Compiled PDF Report", data=pdf_bytes, file_name=f"AutoSec_TARA_Audit_{st.session_state.current_architecture_name.replace(' ', '_')}.pdf", mime="application/pdf", width="stretch")
-                st.success("ISO 21434 / UNECE R155 Audit Package PDF compiled successfully!")
-            except Exception as e:
-                st.error(f"PDF generation notice: {e}")
+
+        st.markdown("<br/>", unsafe_allow_html=True)
+        c_e1, c_e2, c_e3 = st.columns(3)
+        with c_e1:
+            st.download_button(
+                label="Export TARA Matrix (.CSV)",
+                data=df_exp.to_csv(index=False).encode('utf-8'),
+                file_name=f"AutoSec_TARA_{st.session_state.current_architecture_name.replace(' ', '_')}.csv",
+                mime="text/csv",
+                width="stretch"
+            )
+        with c_e2:
+            st.download_button(
+                label="Export JSON Report",
+                data=json.dumps(st.session_state.tara_items, indent=2).encode('utf-8'),
+                file_name=f"AutoSec_TARA_{st.session_state.current_architecture_name.replace(' ', '_')}.json",
+                mime="application/json",
+                width="stretch"
+            )
+        with c_e3:
+            if st.button("Compile UNECE R155 Audit PDF", width="stretch"):
+                try:
+                    from app.services.export_service import ExportService
+                    from app.core.schemas import ThreatScenario
+                    pdf_threats = []
+                    for item in st.session_state.tara_items:
+                        pdf_threats.append(ThreatScenario(
+                            threat_id=item['id'],
+                            target_asset=item['asset'],
+                            trust_boundary_id=item.get('boundary', 'TB-01'),
+                            stride_category=item.get('stride', 'Spoofing'),
+                            mitre_attack_id=item.get('mitre', 'T1565'),
+                            threat_description=item.get('description', ''),
+                            attack_path=item.get('attack_path', []),
+                            cybersecurity_requirement=item.get('csr', ''),
+                            thales_mitigation_control="Thales eHSM Secure Boot & SecOC",
+                            citations=["ISO/SAE 21434"],
+                            elapsed_time=1, expertise=1, knowledge=1, window=1, equipment=0,
+                            impact_safety="Major", impact_financial="Low", impact_operational="Major", impact_privacy="Low",
+                            calculated_feasibility=item.get('feasibility', 'Medium'),
+                            calculated_impact=item.get('impact', 'Major'),
+                            risk_level=item.get('risk', 4),
+                            review_status=item.get('status', 'Pending Review'),
+                            reviewer_notes=item.get('notes', '')
+                        ))
+                    pdf_out = os.path.join(_proj_root, "AutoSec_TARA_Audit_Export.pdf")
+                    ExportService.to_pdf(pdf_threats, pdf_out, system_name=st.session_state.current_architecture_name)
+                    with open(pdf_out, "rb") as pf:
+                        pdf_bytes = pf.read()
+                    st.download_button("Download Compiled PDF Report", data=pdf_bytes, file_name=f"AutoSec_TARA_Audit_{st.session_state.current_architecture_name.replace(' ', '_')}.pdf", mime="application/pdf", width="stretch")
+                    st.success("ISO 21434 / UNECE R155 Audit Package PDF compiled successfully!")
+                except Exception as e:
+                    st.error(f"PDF generation notice: {e}")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
